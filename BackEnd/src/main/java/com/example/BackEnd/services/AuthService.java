@@ -12,13 +12,12 @@ public class AuthService {
     @Autowired
     private AuthRepo user;
 
-  private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-  public void SaveUser(Users newUser){
-    newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
-    user.save(newUser);
-  }
-
+    public void SaveUser(Users newUser){
+        newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        user.save(newUser);
+    }
 
     public boolean CheckEmail(String email){
         return user.findByEmail(email) != null;
