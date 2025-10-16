@@ -1,24 +1,70 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SignUp() {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
 
   const navigate = useNavigate();
+  const { signUp, confirmSignUp } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
     
-    console.log('Sign up attempt:', { fullName, email, password });
-    navigate('/dashboard');
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await signUp({
+        email,
+        password,
+        firstName,
+        lastName,
+        username,
+      });
+      setShowVerification(true);
+    } catch (err: any) {
+      setError(err.message || 'Sign up failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await confirmSignUp({
+        email,
+        confirmationCode: verificationCode,
+      });
+      navigate('/login');
+    } catch (err: any) {
+      setError(err.message || 'Verification failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -51,30 +97,159 @@ export default function SignUp() {
         <div className="max-w-md w-full space-y-8 animate-fade-in relative z-10">
           <div className="text-center animate-slide-up">
             <h2 className="text-4xl font-bold text-gray-900 mb-3 animate-fade-in-delay">
-              Create Your Account 🚀
+              {showVerification ? 'Verify Your Email 📧' : 'Create Your Account 🚀'}
             </h2>
             <p className="text-gray-600 text-lg animate-fade-in-delay">
-              Start building your database visually
+              {showVerification 
+                ? 'Enter the verification code sent to your email'
+                : 'Start building your database visually'
+              }
             </p>
           </div>
 
-          <form className="mt-10 space-y-6 animate-slide-up-delay" onSubmit={handleSubmit}>
-            <div className="space-y-5">
+          {showVerification ? (
+            <form className="mt-10 space-y-6 animate-slide-up-delay" onSubmit={handleVerification}>
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                  <svg className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
               <div className="animate-slide-in-left">
-                <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-3">
-                  Full Name
+                <label htmlFor="verificationCode" className="block text-sm font-semibold text-gray-700 mb-3">
+                  Verification Code
                 </label>
                 <div className="relative group">
                   <input
-                    id="fullName"
-                    name="fullName"
+                    id="verificationCode"
+                    name="verificationCode"
                     type="text"
-                    autoComplete="name"
                     required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white"
-                    placeholder="Enter your full name"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    disabled={isLoading}
+                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
+                    placeholder="Enter verification code"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
+              </div>
+
+              <div className="animate-slide-up-delay">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center py-4 px-6 text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-500 hover:via-emerald-500 hover:to-teal-500 border-0 shadow-2xl shadow-green-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-green-500/60 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 animate-gradient-x overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  <span className="relative z-10 flex items-center">
+                    {isLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        Verify Email
+                        <svg className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </>
+                    )}
+                  </span>
+                  {!isLoading && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
+                  )}
+                </button>
+              </div>
+
+              <div className="text-center animate-fade-in-delay">
+                <p className="text-sm text-gray-600">
+                  Didn't receive the code?{' '}
+                  <button
+                    type="button"
+                    className="font-semibold text-purple-600 hover:text-purple-500 transition-all duration-300"
+                    onClick={() => {/* TODO: Implement resend */}}
+                  >
+                    Resend
+                  </button>
+                </p>
+              </div>
+            </form>
+          ) : (
+            <form className="mt-10 space-y-6 animate-slide-up-delay" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                <svg className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="animate-slide-in-left">
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-3">
+                    First Name
+                  </label>
+                  <div className="relative group">
+                    <input
+                      id="firstName"
+                      name="firstName"
+                      type="text"
+                      autoComplete="given-name"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      disabled={isLoading}
+                      className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
+                      placeholder="First name"
+                    />
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </div>
+
+                <div className="animate-slide-in-left">
+                  <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-3">
+                    Last Name
+                  </label>
+                  <div className="relative group">
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      autoComplete="family-name"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      disabled={isLoading}
+                      className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
+                      placeholder="Last name"
+                    />
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="animate-slide-in-left">
+                <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-3">
+                  Username
+                </label>
+                <div className="relative group">
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    autoComplete="username"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isLoading}
+                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
+                    placeholder="Choose a username"
                   />
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
@@ -93,7 +268,8 @@ export default function SignUp() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white"
+                    disabled={isLoading}
+                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
                     placeholder="Enter your email"
                   />
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -113,8 +289,9 @@ export default function SignUp() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white"
-                    placeholder="Create a password"
+                    disabled={isLoading}
+                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
+                    placeholder="Create a password (min 8 characters)"
                   />
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
@@ -133,7 +310,8 @@ export default function SignUp() {
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white"
+                    disabled={isLoading}
+                    className="appearance-none relative block w-full px-5 py-4 border border-gray-200 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 text-base transition-all duration-300 hover:border-purple-300 hover:shadow-md bg-white/80 backdrop-blur-sm group-hover:bg-white disabled:opacity-50"
                     placeholder="Confirm your password"
                   />
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -144,31 +322,44 @@ export default function SignUp() {
             <div className="animate-slide-up-delay">
               <button
                 type="submit"
-                className="group relative w-full flex justify-center py-4 px-6 text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:via-pink-500 hover:to-indigo-500 border-0 shadow-2xl shadow-purple-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/60 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 animate-gradient-x overflow-hidden"
+                disabled={isLoading}
+                className="group relative w-full flex justify-center py-4 px-6 text-base font-semibold rounded-2xl text-white bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:via-pink-500 hover:to-indigo-500 border-0 shadow-2xl shadow-purple-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/60 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 animate-gradient-x overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 <span className="relative z-10 flex items-center">
-                  Create Account
-                  <svg className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Create Account
+                      <svg className="ml-2 w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
                 </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
+                {!isLoading && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
+                )}
               </button>
             </div>
 
-            <div className="text-center animate-fade-in-delay">
-              <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link
-                  to="/login"
-                  className="font-semibold text-purple-600 hover:text-purple-500 transition-all duration-300 hover:scale-105 relative group"
-                >
-                  <span className="relative z-10">Login</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-pink-50 rounded-md scale-0 group-hover:scale-100 transition-transform duration-200 origin-center -m-1 p-1"></div>
-                </Link>
-              </p>
-            </div>
-          </form>
+              <div className="text-center animate-fade-in-delay">
+                <p className="text-sm text-gray-600">
+                  Already have an account?{' '}
+                  <Link
+                    to="/login"
+                    className="font-semibold text-purple-600 hover:text-purple-500 transition-all duration-300 hover:scale-105 relative group"
+                  >
+                    <span className="relative z-10">Login</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-pink-50 rounded-md scale-0 group-hover:scale-100 transition-transform duration-200 origin-center -m-1 p-1"></div>
+                  </Link>
+                </p>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 

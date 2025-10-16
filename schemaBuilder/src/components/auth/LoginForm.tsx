@@ -1,6 +1,8 @@
-import { Database, ArrowRight, Github, Mail } from "lucide-react";
+import { Database, ArrowRight, Github, Mail, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { motion } from "motion/react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import { Label } from "./label";
 import { Input } from "./input";
 import { Button } from "./button";
@@ -8,10 +10,25 @@ import { Button } from "./button";
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt:", { email, password });
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      await login({ email, password });
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -84,6 +101,17 @@ export function LoginForm() {
         />
 
         <form onSubmit={handleSubmit} className="space-y-5 relative">
+          {error && (
+            <motion.div
+              className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-700">{error}</p>
+            </motion.div>
+          )}
+
           <motion.div
             className="space-y-2"
             initial={{ opacity: 0, x: -20 }}
@@ -99,7 +127,8 @@ export function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="bg-input-background transition-all duration-200 focus:scale-[1.01] h-11"
+                disabled={isLoading}
+                className="bg-input-background transition-all duration-200 focus:scale-[1.01] h-11 disabled:opacity-50"
               />
               {email && (
                 <motion.div
@@ -135,7 +164,8 @@ export function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-input-background transition-all duration-200 focus:scale-[1.01] h-11"
+                disabled={isLoading}
+                className="bg-input-background transition-all duration-200 focus:scale-[1.01] h-11 disabled:opacity-50"
               />
               {password && (
                 <motion.div
@@ -157,26 +187,38 @@ export function LoginForm() {
           >
             <Button
               type="submit"
-              className="w-full h-11 group relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+              disabled={isLoading}
+              className="w-full h-11 group relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Sign in
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    Sign in
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  </>
+                )}
               </span>
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary"
-                animate={{
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-                style={{
-                  backgroundSize: "200% 100%",
-                }}
-              />
+              {!isLoading && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary"
+                  animate={{
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  style={{
+                    backgroundSize: "200% 100%",
+                  }}
+                />
+              )}
             </Button>
           </motion.div>
         </form>
@@ -234,9 +276,9 @@ export function LoginForm() {
 
           <p className="text-muted-foreground">
             Don't have an account?{" "}
-            <a href="#" className="text-primary hover:underline transition-all duration-200 hover:translate-x-0.5 inline-block">
+            <Link to="/signup" className="text-primary hover:underline transition-all duration-200 hover:translate-x-0.5 inline-block">
               Sign up for free
-            </a>
+            </Link>
           </p>
         </motion.div>
       </motion.div>
