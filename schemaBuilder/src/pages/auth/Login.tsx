@@ -1,15 +1,7 @@
-// import React from 'react';
-// import { useNavigate } from 'react-router-dom';
 import { DatabaseGrid } from '../../components/auth/DatabaseGrid';
 import { LoginForm } from '../../components/auth/LoginForm';
 
 export default function Login() {
-  // const navigate = useNavigate();
-
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   navigate('/dashboard');
-  // };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">

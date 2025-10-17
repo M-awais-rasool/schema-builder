@@ -2,7 +2,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/auth/Login';
-import SignUp from './pages/auth/SignUp';
 import Dashboard from './pages/user/Dashboard';
 import Designer from './pages/user/Designer';
 import Projects from './pages/user/Projects';
@@ -14,7 +13,7 @@ import './App.css';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
+    console.log('ProtectedRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -46,7 +45,6 @@ function AppRoutes() {
       <div className="App">
         <Routes>
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
 
           <Route path="/designer" element={<ProtectedRoute><Designer /></ProtectedRoute>} />
           

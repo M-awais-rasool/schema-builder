@@ -4,20 +4,8 @@ import { CodeSnippet } from "./CodeSnippet";
 export function DatabaseGrid() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <motion.div 
+      <motion.div
         className="absolute inset-0 opacity-30"
-        animate={{
-          background: [
-            "radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.03) 0%, transparent 50%)",
-            "radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.03) 0%, transparent 50%)",
-            "radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.03) 0%, transparent 50%)",
-          ],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "linear"
-        }}
       />
 
       <div
@@ -42,11 +30,11 @@ export function DatabaseGrid() {
         />
       </div>
 
-      <motion.div 
+      <motion.div
         className="hidden xl:block absolute top-64 left-[6%] w-52 h-36 border-2 border-primary/20 rounded-xl backdrop-blur-sm bg-background/50 shadow-xl"
         initial={{ opacity: 0, y: -20 }}
-        animate={{ 
-          opacity: 1, 
+        animate={{
+          opacity: 1,
           y: 0,
         }}
         transition={{
@@ -55,27 +43,10 @@ export function DatabaseGrid() {
         }}
       >
         <motion.div
-          animate={{
-            y: [0, -8, 0],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
         >
           <div className="h-10 bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 flex items-center px-4">
-            <motion.div 
+            <motion.div
               className="w-3 h-3 rounded-full bg-primary/40 mr-2"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
             />
             <div className="h-2 w-20 bg-primary/30 rounded" />
           </div>
@@ -98,11 +69,11 @@ export function DatabaseGrid() {
         />
       </div>
 
-      <motion.div 
+      <motion.div
         className="hidden xl:block absolute bottom-24 right-[6%] w-52 h-36 border-2 border-primary/20 rounded-xl backdrop-blur-sm bg-background/50 shadow-xl"
         initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: 1, 
+        animate={{
+          opacity: 1,
           y: 0,
         }}
         transition={{
@@ -111,29 +82,10 @@ export function DatabaseGrid() {
         }}
       >
         <motion.div
-          animate={{
-            y: [0, 8, 0],
-          }}
-          transition={{
-            duration: 5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5
-          }}
         >
           <div className="h-10 bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 flex items-center px-4">
-            <motion.div 
+            <motion.div
               className="w-3 h-3 rounded-full bg-primary/40 mr-2"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5
-              }}
             />
             <div className="h-2 w-24 bg-primary/30 rounded" />
           </div>
@@ -145,42 +97,14 @@ export function DatabaseGrid() {
         </motion.div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="hidden xl:block absolute top-32 right-[6%] w-48 h-36 border-2 border-primary/20 rounded-xl backdrop-blur-sm bg-background/50 shadow-xl"
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ 
-          opacity: 1, 
-          x: 0,
-        }}
-        transition={{
-          duration: 0.8,
-          delay: 0.6,
-        }}
       >
         <motion.div
-          animate={{
-            y: [0, -6, 0],
-          }}
-          transition={{
-            duration: 4.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.8
-          }}
         >
           <div className="h-10 bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 flex items-center px-4">
-            <motion.div 
+            <motion.div
               className="w-3 h-3 rounded-full bg-primary/40 mr-2"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.8
-              }}
             />
             <div className="h-2 w-20 bg-primary/30 rounded" />
           </div>
@@ -192,42 +116,14 @@ export function DatabaseGrid() {
         </motion.div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         className="hidden xl:block absolute top-[60%] left-[10%] w-44 h-32 border-2 border-primary/20 rounded-xl backdrop-blur-sm bg-background/50 shadow-xl"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ 
-          opacity: 1, 
-          scale: 1,
-        }}
-        transition={{
-          duration: 0.8,
-          delay: 0.9,
-        }}
       >
         <motion.div
-          animate={{
-            y: [0, -6, 0],
-          }}
-          transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1
-          }}
         >
           <div className="h-9 bg-gradient-to-r from-primary/10 to-primary/5 border-b-2 border-primary/20 flex items-center px-3">
-            <motion.div 
+            <motion.div
               className="w-2.5 h-2.5 rounded-full bg-primary/40 mr-2"
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 1
-              }}
             />
             <div className="h-1.5 w-16 bg-primary/30 rounded" />
           </div>
@@ -258,7 +154,7 @@ export function DatabaseGrid() {
             />
           </marker>
         </defs>
-        
+
         <motion.path
           d="M 10% 35%, Q 25% 50%, 85% 70%"
           stroke="currentColor"
@@ -267,14 +163,8 @@ export function DatabaseGrid() {
           className="text-primary/20"
           markerEnd="url(#arrowhead)"
           strokeDasharray="8,8"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{
-            pathLength: { duration: 2, delay: 1 },
-            opacity: { duration: 0.5, delay: 1 }
-          }}
         />
-        
+
         <motion.path
           d="M 90% 45%, Q 70% 55%, 85% 85%"
           stroke="currentColor"
@@ -283,18 +173,12 @@ export function DatabaseGrid() {
           className="text-primary/20"
           markerEnd="url(#arrowhead)"
           strokeDasharray="8,8"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{
-            pathLength: { duration: 2, delay: 1.3 },
-            opacity: { duration: 0.5, delay: 1.3 }
-          }}
         />
       </svg>
 
       <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-accent/[0.03]" />
-      
-      <motion.div 
+
+      <motion.div
         className="absolute inset-0 opacity-40"
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.4 }}

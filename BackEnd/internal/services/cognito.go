@@ -49,7 +49,6 @@ func NewCognitoService(cfg *config.Config) (*CognitoService, error) {
 	}, nil
 }
 
-// GetUser retrieves user information from Cognito using an access token
 func (s *CognitoService) GetUser(accessToken string) (*models.User, error) {
 	input := &cognitoidentityprovider.GetUserInput{
 		AccessToken: aws.String(accessToken),
@@ -83,7 +82,6 @@ func (s *CognitoService) GetUser(accessToken string) (*models.User, error) {
 	return user, nil
 }
 
-// ValidateToken validates an access token and returns the user information
 func (s *CognitoService) ValidateToken(accessToken string) (*models.User, error) {
 	return s.GetUser(accessToken)
 }

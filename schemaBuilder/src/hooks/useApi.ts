@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import { fetchAuthSession } from 'aws-amplify/auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
@@ -8,6 +9,34 @@ interface RequestOptions extends RequestInit {
 
 export const useApi = () => {
   const { logout } = useAuth();
+
+  const getAuthToken = async (): Promise<string | null> => {
+    try {
+      const session = await fetchAuthSession();
+      if (session.tokens?.accessToken) {
+        return session.tokens.accessToken.toString();
+      }
+      const cognitoKeys = Object.keys(localStorage).filter(key => 
+        key.includes('CognitoIdentityServiceProvider') && key.includes('accessToken')
+      );
+      if (cognitoKeys.length > 0) {
+        const token = localStorage.getItem(cognitoKeys[0]);
+        return token;
+      }
+      return null;
+    } catch (error) {
+      const cognitoKeys = Object.keys(localStorage).filter(key => 
+        key.includes('CognitoIdentityServiceProvider') && key.includes('accessToken')
+      );
+      
+      if (cognitoKeys.length > 0) {
+        const token = localStorage.getItem(cognitoKeys[0]);
+        return token;
+      }
+      
+      return null;
+    }
+  };
 
   const makeRequest = async (
     endpoint: string, 
@@ -21,9 +50,7 @@ export const useApi = () => {
       url += `?${searchParams.toString()}`;
     }
 
-    const token = localStorage.getItem('amplify-authenticator-authToken') || 
-                  sessionStorage.getItem('amplify-authenticator-authToken');
-
+    const token = await getAuthToken();
     const config: RequestInit = {
       ...fetchOptions,
       headers: {

@@ -13,6 +13,7 @@ import (
 func SetupRoutes(
 	r *gin.Engine,
 	authHandler *handlers.AuthHandler,
+	schemaHandler *handlers.SchemaHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	securityMiddleware *middleware.SecurityMiddleware,
 ) {
@@ -35,7 +36,12 @@ func SetupRoutes(
 
 	api := r.Group("/api/v1")
 
-	// All routes are protected since authentication is handled by AWS Cognito on frontend
+	// Public routes
+	public := api.Group("/")
+	{
+		public.GET("/schemas/public", schemaHandler.ListPublicSchemas)
+	}
+
 	protected := api.Group("/")
 	protected.Use(authMiddleware.RequireAuth())
 	{
@@ -45,14 +51,15 @@ func SetupRoutes(
 			user.PUT("/profile", authHandler.UpdateProfile)
 		}
 
-		// Schema routes (to be implemented)
-		// schemas := protected.Group("/schemas")
-		// {
-		//     schemas.GET("", schemaHandler.ListSchemas)
-		//     schemas.POST("", schemaHandler.CreateSchema)
-		//     schemas.GET("/:id", schemaHandler.GetSchema)
-		//     schemas.PUT("/:id", schemaHandler.UpdateProfile)
-		//     schemas.DELETE("/:id", schemaHandler.DeleteSchema)
-		// }
+		schemas := protected.Group("/schemas")
+		{
+			schemas.POST("", schemaHandler.CreateSchema)                           // Create a new schema
+			schemas.GET("", schemaHandler.ListUserSchemas)                         // List user's schemas
+			schemas.GET("/:id", schemaHandler.GetSchema)                           // Get specific schema
+			schemas.PUT("/:id", schemaHandler.UpdateSchema)                        // Update schema
+			schemas.DELETE("/:id", schemaHandler.DeleteSchema)                     // Delete schema
+			schemas.POST("/:id/duplicate", schemaHandler.DuplicateSchema)          // Duplicate schema
+			schemas.PATCH("/:id/visibility", schemaHandler.ToggleSchemaVisibility) // Toggle public/private
+		}
 	}
 }

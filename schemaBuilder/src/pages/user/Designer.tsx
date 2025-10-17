@@ -12,23 +12,22 @@ import ReactFlow, {
 import type { Node } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-// Components
 import { TableNode } from '../../components/designer/TableNode';
 import { DesignerToolbar } from '../../components/toolbar';
 import { ChatPanel } from '../../components/chat';
 import { TablePropertiesPanel } from '../../components/sidebars';
 import { SQLPreviewPanel } from '../../components/panels';
 import { MobileButtons } from '../../components/mobile';
+import { SaveSchemaDialog, LoadSchemaDialog } from '../../components/dialogs';
 
-// Hooks
 import { 
   useTableOperations, 
   useChatFunctionality, 
   useHistoryManagement, 
-  useRelationshipOperations 
+  useRelationshipOperations,
+  useSchemaOperations,
 } from '../../hooks';
 
-// Utils
 import { generateSQL } from '../../utils/sqlGenerator';
 import { initialEdges, initialNodes } from '../../utils/utils';
 
@@ -45,11 +44,22 @@ const Designer: React.FC = () => {
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showToolbar] = useState(true);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
+  const [currentSchemaId, setCurrentSchemaId] = useState<string | null>(null);
+  const [currentSchemaName, setCurrentSchemaName] = useState<string>('');
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [, setReactFlowInstance] = useState<any>(null);
 
-  // Custom hooks
   const { chatMessages, currentMessage, setCurrentMessage, sendMessage } = useChatFunctionality();
+  
+  const { 
+    createSchema, 
+    updateSchema, 
+    deleteSchema,
+    convertTablesToNodes,
+    loading: schemaLoading 
+  } = useSchemaOperations();
   
   const { undo, redo, canUndo, canRedo } = useHistoryManagement({
     nodes,
@@ -100,7 +110,6 @@ const Designer: React.FC = () => {
     setIsRightSidebarOpen(true);
   }, [nodes]);
 
-  // Utility functions
   const handleCopySQL = () => {
     const sqlContent = generateSQL(nodes, edges);
     navigator.clipboard.writeText(sqlContent);
@@ -116,12 +125,60 @@ const Designer: React.FC = () => {
     setIsRightSidebarOpen(false);
   };
 
+  const handleSaveSchema = async (name: string, description: string, isPublic: boolean) => {
+    try {
+      if (currentSchemaId) {
+        await updateSchema(currentSchemaId, {
+          name,
+          description,
+          nodes,
+          isPublic,
+        });
+      } else {
+        const newSchema = await createSchema(name, description, nodes, isPublic);
+        setCurrentSchemaId(newSchema.id);
+      }
+      setCurrentSchemaName(name);
+      alert('Schema saved successfully!');
+    } catch (error) {
+      console.error('Failed to save schema:', error);
+    }
+  };
+
+  const handleLoadSchema = (schema: any) => {
+    try {
+      const { nodes: loadedNodes, edges: loadedEdges } = convertTablesToNodes(schema.tables);
+      setNodes(loadedNodes);
+      setEdges(loadedEdges);
+      setCurrentSchemaId(schema.id);
+      setCurrentSchemaName(schema.name);
+      alert('Schema loaded successfully!');
+    } catch (error) {
+      console.error('Failed to load schema:', error);
+      alert('Failed to load schema');
+    }
+  };
+
+  const handleDeleteSchema = async (schemaId: string) => {
+    try {
+      await deleteSchema(schemaId);
+      if (currentSchemaId === schemaId) {
+        setCurrentSchemaId(null);
+        setCurrentSchemaName('');
+      }
+      alert('Schema deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete schema:', error);
+      alert('Failed to delete schema');
+    }
+  };
+
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       <DesignerToolbar
         onNavigateHome={() => navigate('/dashboard')}
-        onSave={() => {}}
-        onDownload={() => {}}
+        onSave={() => setIsSaveDialogOpen(true)}
+        onDownload={() => setIsLoadDialogOpen(true)}
         onUndo={undo}
         onRedo={redo}
         onZoomIn={() => {}}
@@ -202,6 +259,22 @@ const Designer: React.FC = () => {
         onAddTable={addNewTable}
         onToggleLeftSidebar={() => setIsLeftSidebarOpen(true)}
         isLeftSidebarOpen={isLeftSidebarOpen}
+      />
+
+      <SaveSchemaDialog
+        isOpen={isSaveDialogOpen}
+        onClose={() => setIsSaveDialogOpen(false)}
+        onSave={handleSaveSchema}
+        initialName={currentSchemaName}
+        loading={schemaLoading}
+        isUpdate={!!currentSchemaId}
+      />
+
+      <LoadSchemaDialog
+        isOpen={isLoadDialogOpen}
+        onClose={() => setIsLoadDialogOpen(false)}
+        onLoad={handleLoadSchema}
+        onDelete={handleDeleteSchema}
       />
     </div>
   );

@@ -93,9 +93,10 @@ type Constraint struct {
 }
 
 type CreateSchemaRequest struct {
-	Name        string `json:"name" validate:"required,min=1,max=100"`
-	Description string `json:"description" validate:"omitempty,max=500"`
-	IsPublic    bool   `json:"is_public"`
+	Name        string  `json:"name" validate:"required,min=1,max=100"`
+	Description string  `json:"description" validate:"omitempty,max=500"`
+	Tables      []Table `json:"tables" validate:"omitempty,dive"`
+	IsPublic    bool    `json:"is_public"`
 }
 
 type UpdateSchemaRequest struct {

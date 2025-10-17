@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Save,
-  Download,
+  FolderOpen,
   Undo,
   Redo,
   ZoomIn,
@@ -90,7 +90,7 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
         />
         <h1 className="text-2xl font-bold text-gray-900">Database Designer</h1>
         
-        <div className="hidden md:flex items-center space-x-2">
+        <div className="flex items-center space-x-2">
           <ToolbarButton
             onClick={onSave}
             icon={<Save className="w-4 h-4" />}
@@ -99,7 +99,7 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
           />
           <ToolbarButton
             onClick={onDownload}
-            icon={<Download className="w-4 h-4" />}
+            icon={<FolderOpen className="w-4 h-4" />}
             variant="primary"
             showLabel={false}
           />

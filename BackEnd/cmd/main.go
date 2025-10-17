@@ -49,11 +49,13 @@ func main() {
 	}
 
 	userService := services.NewUserService(repos.User)
+	schemaService := services.NewSchemaService(repos.Schema, repos.User)
 
 	authMiddleware := middleware.NewAuthMiddleware(cognitoService, userService)
 	securityMiddleware := middleware.NewSecurityMiddleware(cfg)
 
 	authHandler := handlers.NewAuthHandler(cognitoService, userService)
+	schemaHandler := handlers.NewSchemaHandler(schemaService)
 
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -61,7 +63,7 @@ func main() {
 
 	r := gin.New()
 
-	routes.SetupRoutes(r, authHandler, authMiddleware, securityMiddleware)
+	routes.SetupRoutes(r, authHandler, schemaHandler, authMiddleware, securityMiddleware)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Server.Port,

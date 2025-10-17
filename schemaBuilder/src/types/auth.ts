@@ -31,7 +31,7 @@ export interface SignUpData {
 }
 
 export interface ConfirmSignUpData {
-  email: string;
+  username: string; 
   confirmationCode: string;
 }
 
@@ -49,7 +49,7 @@ export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signUp: (data: SignUpData) => Promise<void>;
   confirmSignUp: (data: ConfirmSignUpData) => Promise<void>;
-  resendConfirmationCode: (email: string) => Promise<void>;
+  resendConfirmationCode: (identifier: string) => Promise<void>;
   forgotPassword: (data: ForgotPasswordData) => Promise<void>;
   resetPassword: (data: ResetPasswordData) => Promise<void>;
   logout: () => Promise<void>;
