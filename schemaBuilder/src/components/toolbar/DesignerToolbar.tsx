@@ -39,6 +39,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     <button
       onClick={onClick}
       disabled={disabled}
+      title={label}
       className={`${baseClasses} ${variantClasses[variant]} ${disabled ? disabledClasses : ''}`}
     >
       {icon}
@@ -60,6 +61,8 @@ interface DesignerToolbarProps {
   canUndo: boolean;
   canRedo: boolean;
   showToolbar: boolean;
+  schemaName?: string;
+  isEditing?: boolean;
 }
 
 export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
@@ -75,6 +78,8 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
   canUndo,
   canRedo,
   showToolbar,
+  schemaName,
+  isEditing = false,
 }) => {
   return (
     <div className={`
@@ -88,12 +93,21 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
           icon={<Home className="w-4 h-4" />}
           label="Dashboard"
         />
-        <h1 className="text-2xl font-bold text-gray-900">Database Designer</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isEditing && schemaName ? (
+            <span>
+              Editing: <span className="text-indigo-600">{schemaName}</span>
+            </span>
+          ) : (
+            'Database Designer'
+          )}
+        </h1>
         
         <div className="flex items-center space-x-2">
           <ToolbarButton
             onClick={onSave}
             icon={<Save className="w-4 h-4" />}
+            label={isEditing ? "Update" : "Save"}
             variant="primary"
             showLabel={false}
           />

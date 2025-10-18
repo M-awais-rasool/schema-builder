@@ -56,17 +56,24 @@ type Table struct {
 }
 
 type Field struct {
-	ID           string `bson:"id" json:"id"`
-	Name         string `bson:"name" json:"name"`
-	Type         string `bson:"type" json:"type"`
-	Length       int    `bson:"length,omitempty" json:"length,omitempty"`
-	Precision    int    `bson:"precision,omitempty" json:"precision,omitempty"`
-	Scale        int    `bson:"scale,omitempty" json:"scale,omitempty"`
-	IsNullable   bool   `bson:"is_nullable" json:"is_nullable"`
-	IsPrimaryKey bool   `bson:"is_primary_key" json:"is_primary_key"`
-	IsUnique     bool   `bson:"is_unique" json:"is_unique"`
-	DefaultValue string `bson:"default_value,omitempty" json:"default_value,omitempty"`
-	Comment      string `bson:"comment,omitempty" json:"comment,omitempty"`
+	ID           string     `bson:"id" json:"id"`
+	Name         string     `bson:"name" json:"name"`
+	Type         string     `bson:"type" json:"type"`
+	Length       int        `bson:"length,omitempty" json:"length,omitempty"`
+	Precision    int        `bson:"precision,omitempty" json:"precision,omitempty"`
+	Scale        int        `bson:"scale,omitempty" json:"scale,omitempty"`
+	IsPrimaryKey bool       `bson:"is_primary_key" json:"is_primary_key"`
+	IsNotNull    bool       `bson:"is_not_null" json:"is_not_null"`
+	IsUnique     bool       `bson:"is_unique" json:"is_unique"`
+	DefaultValue string     `bson:"default_value,omitempty" json:"default_value,omitempty"`
+	IsForeignKey bool       `bson:"is_foreign_key" json:"is_foreign_key"`
+	References   *Reference `bson:"references,omitempty" json:"references,omitempty"`
+	Comment      string     `bson:"comment,omitempty" json:"comment,omitempty"`
+}
+
+type Reference struct {
+	TableID string `bson:"table_id" json:"table_id"`
+	FieldID string `bson:"field_id" json:"field_id"`
 }
 
 type Position struct {

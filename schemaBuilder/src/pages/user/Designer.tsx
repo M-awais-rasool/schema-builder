@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -37,6 +37,7 @@ const nodeTypes = {
 
 const Designer: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
@@ -48,6 +49,8 @@ const Designer: React.FC = () => {
   const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [currentSchemaId, setCurrentSchemaId] = useState<string | null>(null);
   const [currentSchemaName, setCurrentSchemaName] = useState<string>('');
+  const [currentSchemaDescription, setCurrentSchemaDescription] = useState<string>('');
+  const [currentSchemaIsPublic, setCurrentSchemaIsPublic] = useState<boolean>(false);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [, setReactFlowInstance] = useState<any>(null);
 
@@ -57,6 +60,7 @@ const Designer: React.FC = () => {
     createSchema, 
     updateSchema, 
     deleteSchema,
+    getSchema,
     convertTablesToNodes,
     loading: schemaLoading 
   } = useSchemaOperations();
@@ -91,9 +95,31 @@ const Designer: React.FC = () => {
   });
 
   useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [setNodes, setEdges]);
+    const loadInitialData = async () => {
+      const schemaId = searchParams.get('schema');
+      if (schemaId) {
+        try {
+          const schema = await getSchema(schemaId);
+          const { nodes: loadedNodes, edges: loadedEdges } = convertTablesToNodes(schema.tables);
+          setNodes(loadedNodes);
+          setEdges(loadedEdges);
+          console.log("Loaded schema:", schema);  
+          setCurrentSchemaId(schema.id);
+          setCurrentSchemaName(schema.name);
+          setCurrentSchemaDescription(schema.description || '');
+          setCurrentSchemaIsPublic(schema.is_public || false);
+        } catch (error) {
+          setNodes(initialNodes);
+          setEdges(initialEdges);
+        } 
+      } else {
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+      }
+    };
+
+    loadInitialData();
+  }, [searchParams, setNodes, setEdges]);
 
   useEffect(() => {
     if (selectedNode) {
@@ -128,6 +154,8 @@ const Designer: React.FC = () => {
   const handleSaveSchema = async (name: string, description: string, isPublic: boolean) => {
     try {
       if (currentSchemaId) {
+        console.log("Updating schema:", currentSchemaId);
+        console.log({ name, description, isPublic, nodes });
         await updateSchema(currentSchemaId, {
           name,
           description,
@@ -188,9 +216,10 @@ const Designer: React.FC = () => {
         canUndo={canUndo}
         canRedo={canRedo}
         showToolbar={showToolbar}
+        schemaName={currentSchemaName}
+        isEditing={!!currentSchemaId}
       />
-
-      <div className="flex-1 flex overflow-hidden">
+     <div className="flex-1 flex overflow-hidden">
         <ChatPanel
           isOpen={isLeftSidebarOpen}
           onToggle={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
@@ -246,26 +275,29 @@ const Designer: React.FC = () => {
           onDuplicateTable={duplicateTable}
           onUpdateEdges={setEdges}
         />
-      </div>
+        </div>
 
-      <SQLPreviewPanel
-        isOpen={isBottomPanelOpen}
-        onClose={() => setIsBottomPanelOpen(false)}
-        sqlContent={generateSQL(nodes, edges)}
-        onCopySQL={handleCopySQL}
-      />
+        
+        <SQLPreviewPanel
+          isOpen={isBottomPanelOpen}
+          onClose={() => setIsBottomPanelOpen(false)}
+          sqlContent={generateSQL(nodes, edges)}
+          onCopySQL={handleCopySQL}
+        />
 
-      <MobileButtons
-        onAddTable={addNewTable}
-        onToggleLeftSidebar={() => setIsLeftSidebarOpen(true)}
-        isLeftSidebarOpen={isLeftSidebarOpen}
-      />
+        <MobileButtons
+          onAddTable={addNewTable}
+          onToggleLeftSidebar={() => setIsLeftSidebarOpen(true)}
+          isLeftSidebarOpen={isLeftSidebarOpen}
+        />
 
       <SaveSchemaDialog
         isOpen={isSaveDialogOpen}
         onClose={() => setIsSaveDialogOpen(false)}
         onSave={handleSaveSchema}
         initialName={currentSchemaName}
+        initialDescription={currentSchemaDescription}
+        initialIsPublic={currentSchemaIsPublic}
         loading={schemaLoading}
         isUpdate={!!currentSchemaId}
       />

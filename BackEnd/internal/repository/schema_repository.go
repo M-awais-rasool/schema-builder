@@ -82,6 +82,7 @@ func (r *schemaRepository) GetByUserID(ctx context.Context, userID primitive.Obj
 
 func (r *schemaRepository) Update(ctx context.Context, id primitive.ObjectID, update *models.UpdateSchemaRequest) error {
 	updateDoc := bson.M{"updated_at": time.Now()}
+	updateOps := bson.M{"$set": updateDoc}
 
 	if update.Name != "" {
 		updateDoc["name"] = update.Name
@@ -91,7 +92,7 @@ func (r *schemaRepository) Update(ctx context.Context, id primitive.ObjectID, up
 	}
 	if update.Tables != nil {
 		updateDoc["tables"] = update.Tables
-		updateDoc["$inc"] = bson.M{"version": 1}
+		updateOps["$inc"] = bson.M{"version": 1}
 	}
 	if update.IsPublic != nil {
 		updateDoc["is_public"] = *update.IsPublic
@@ -100,7 +101,7 @@ func (r *schemaRepository) Update(ctx context.Context, id primitive.ObjectID, up
 	_, err := r.collection.UpdateOne(
 		ctx,
 		bson.M{"_id": id},
-		bson.M{"$set": updateDoc},
+		updateOps,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update schema: %v", err)

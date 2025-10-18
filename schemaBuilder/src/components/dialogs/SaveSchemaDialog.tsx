@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Save, Lock, Unlock } from 'lucide-react';
 
 interface SaveSchemaDialogProps {
@@ -27,9 +27,15 @@ export const SaveSchemaDialog: React.FC<SaveSchemaDialogProps> = ({
   const [isPublic, setIsPublic] = useState(initialIsPublic);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setName(initialName);
+    setDescription(initialDescription);
+    setIsPublic(initialIsPublic);
+  }, [initialName, initialDescription, initialIsPublic, isOpen]);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       setError('Schema name is required');
       return;
@@ -125,11 +131,10 @@ export const SaveSchemaDialog: React.FC<SaveSchemaDialogProps> = ({
               type="button"
               onClick={() => setIsPublic(!isPublic)}
               disabled={loading}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md border transition-all duration-200 disabled:opacity-50 ${
-                isPublic
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md border transition-all duration-200 disabled:opacity-50 ${isPublic
                   ? 'bg-blue-50 border-blue-200 text-blue-700'
                   : 'bg-gray-50 border-gray-200 text-gray-700'
-              }`}
+                }`}
             >
               {isPublic ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
               <span className="text-sm font-medium">
@@ -138,8 +143,8 @@ export const SaveSchemaDialog: React.FC<SaveSchemaDialogProps> = ({
             </button>
             <div className="flex-1">
               <p className="text-xs text-gray-600">
-                {isPublic 
-                  ? 'Anyone can view this schema' 
+                {isPublic
+                  ? 'Anyone can view this schema'
                   : 'Only you can view this schema'
                 }
               </p>
