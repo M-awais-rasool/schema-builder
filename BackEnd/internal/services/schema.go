@@ -27,13 +27,11 @@ func NewSchemaService(schemaRepo repository.SchemaRepository, userRepo repositor
 }
 
 func (s *SchemaService) CreateSchema(ctx context.Context, userID primitive.ObjectID, req *models.CreateSchemaRequest) (*models.Schema, error) {
-	// Verify user exists
 	_, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("user not found: %v", err)
 	}
 
-	// Create schema
 	schema := &models.Schema{
 		UserID:      userID,
 		Name:        req.Name,
@@ -57,7 +55,6 @@ func (s *SchemaService) GetSchemaByID(ctx context.Context, id primitive.ObjectID
 		return nil, fmt.Errorf("schema not found: %v", err)
 	}
 
-	// Check if user owns the schema or if it's public
 	if schema.UserID != userID && !schema.IsPublic {
 		return nil, fmt.Errorf("access denied: schema is private")
 	}
@@ -100,7 +97,6 @@ func (s *SchemaService) GetPublicSchemas(ctx context.Context, page, limit int) (
 }
 
 func (s *SchemaService) UpdateSchema(ctx context.Context, id primitive.ObjectID, userID primitive.ObjectID, req *models.UpdateSchemaRequest) (*models.Schema, error) {
-	// Check if schema exists and user owns it
 	schema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("schema not found: %v", err)
@@ -110,16 +106,14 @@ func (s *SchemaService) UpdateSchema(ctx context.Context, id primitive.ObjectID,
 		return nil, fmt.Errorf("access denied: you can only update your own schemas")
 	}
 
-	// Update schema
 	if err := s.schemaRepo.Update(ctx, id, req); err != nil {
 		s.log.Errorf("Failed to update schema: %v", err)
 		return nil, fmt.Errorf("failed to update schema: %v", err)
 	}
 
-	// Get updated schema
 	updatedSchema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
-		return schema, nil // Return original schema if can't fetch updated one
+		return schema, nil 
 	}
 
 	s.log.Infof("Schema updated successfully: %s", id.Hex())
@@ -127,7 +121,6 @@ func (s *SchemaService) UpdateSchema(ctx context.Context, id primitive.ObjectID,
 }
 
 func (s *SchemaService) DeleteSchema(ctx context.Context, id primitive.ObjectID, userID primitive.ObjectID) error {
-	// Check if schema exists and user owns it
 	schema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("schema not found: %v", err)
@@ -147,25 +140,22 @@ func (s *SchemaService) DeleteSchema(ctx context.Context, id primitive.ObjectID,
 }
 
 func (s *SchemaService) DuplicateSchema(ctx context.Context, id primitive.ObjectID, userID primitive.ObjectID, newName string) (*models.Schema, error) {
-	// Get original schema
 	originalSchema, err := s.GetSchemaByID(ctx, id, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get original schema: %v", err)
 	}
 
-	// Create duplicate with new name
 	duplicateReq := &models.CreateSchemaRequest{
 		Name:        newName,
 		Description: fmt.Sprintf("Copy of %s", originalSchema.Name),
 		Tables:      originalSchema.Tables,
-		IsPublic:    false, // Duplicated schemas are private by default
+		IsPublic:    false, 
 	}
 
 	return s.CreateSchema(ctx, userID, duplicateReq)
 }
 
 func (s *SchemaService) ToggleSchemaVisibility(ctx context.Context, id primitive.ObjectID, userID primitive.ObjectID) (*models.Schema, error) {
-	// Get current schema
 	schema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("schema not found: %v", err)
@@ -175,7 +165,6 @@ func (s *SchemaService) ToggleSchemaVisibility(ctx context.Context, id primitive
 		return nil, fmt.Errorf("access denied: you can only modify your own schemas")
 	}
 
-	// Toggle visibility
 	isPublic := !schema.IsPublic
 	updateReq := &models.UpdateSchemaRequest{
 		IsPublic: &isPublic,

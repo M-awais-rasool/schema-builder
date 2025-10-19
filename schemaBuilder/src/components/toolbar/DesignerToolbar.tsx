@@ -1,11 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Save,
-  FolderOpen,
   Undo,
   Redo,
-  ZoomIn,
-  ZoomOut,
   Plus,
   Code,
   Home,
@@ -28,34 +25,51 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   variant = 'secondary',
   showLabel = true,
 }) => {
-  const baseClasses = "p-2 transition-all duration-300 rounded-lg flex items-center space-x-2";
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const baseClasses =
+    'relative p-2 transition-all duration-300 rounded-lg flex items-center space-x-2';
   const variantClasses = {
-    primary: "bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl hover:scale-105",
-    secondary: "bg-gray-100 hover:bg-gray-200 text-gray-700",
+    primary:
+      'bg-black hover:bg-gray-800 text-white shadow-lg hover:shadow-xl hover:scale-105',
+    secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
   };
-  const disabledClasses = "disabled:opacity-50 disabled:cursor-not-allowed";
+  const disabledClasses = 'disabled:opacity-50 disabled:cursor-not-allowed';
 
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={label}
-      className={`${baseClasses} ${variantClasses[variant]} ${disabled ? disabledClasses : ''}`}
+    <div
+      className="relative flex flex-col items-center"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
     >
-      {icon}
-      {label && showLabel && <span className="hidden sm:inline">{label}</span>}
-    </button>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={`${baseClasses} ${variantClasses[variant]} ${
+          disabled ? disabledClasses : ''
+        }`}
+      >
+        {icon}
+        {label && showLabel && <span className="hidden sm:inline">{label}</span>}
+      </button>
+
+      {label && showTooltip && (
+        <div className="absolute top-full mt-2 whitespace-nowrap bg-gray-900 text-white text-xs px-2 py-1 rounded-md shadow-lg opacity-90 animate-fadeIn z-50">
+          {label}
+          <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+        </div>
+      )}
+    </div>
   );
 };
+
+
 
 interface DesignerToolbarProps {
   onNavigateHome: () => void;
   onSave: () => void;
-  onDownload: () => void;
   onUndo: () => void;
   onRedo: () => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
   onAddTable: () => void;
   onToggleSQL: () => void;
   canUndo: boolean;
@@ -68,11 +82,8 @@ interface DesignerToolbarProps {
 export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
   onNavigateHome,
   onSave,
-  onDownload,
   onUndo,
   onRedo,
-  onZoomIn,
-  onZoomOut,
   onAddTable,
   onToggleSQL,
   canUndo,
@@ -112,12 +123,6 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
             showLabel={false}
           />
           <ToolbarButton
-            onClick={onDownload}
-            icon={<FolderOpen className="w-4 h-4" />}
-            variant="primary"
-            showLabel={false}
-          />
-          <ToolbarButton
             onClick={onUndo}
             disabled={!canUndo}
             icon={<Undo className="w-4 h-4" />}
@@ -126,14 +131,6 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
             onClick={onRedo}
             disabled={!canRedo}
             icon={<Redo className="w-4 h-4" />}
-          />
-          <ToolbarButton
-            onClick={onZoomIn}
-            icon={<ZoomIn className="w-4 h-4" />}
-          />
-          <ToolbarButton
-            onClick={onZoomOut}
-            icon={<ZoomOut className="w-4 h-4" />}
           />
         </div>
       </div>

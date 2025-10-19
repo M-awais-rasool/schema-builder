@@ -16,6 +16,7 @@ type Config struct {
 	JWT      JWTConfig
 	CORS     CORSConfig
 	Security SecurityConfig
+	AI       AIConfig
 }
 
 type ServerConfig struct {
@@ -50,6 +51,10 @@ type SecurityConfig struct {
 	BcryptCost           int
 	RateLimitMaxRequests int
 	RateLimitWindow      time.Duration
+}
+
+type AIConfig struct {
+	GeminiAPIKey string
 }
 
 func Load() (*Config, error) {
@@ -106,6 +111,9 @@ func Load() (*Config, error) {
 			RateLimitMaxRequests: rateLimitMaxRequests,
 			RateLimitWindow:      time.Duration(rateLimitWindow) * time.Second,
 		},
+		AI: AIConfig{
+			GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -124,6 +132,9 @@ func (c *Config) Validate() error {
 	}
 	if c.JWT.Secret == "default-secret-please-change-in-production" && c.Server.Env == "production" {
 		return fmt.Errorf("JWT_SECRET must be set in production")
+	}
+	if c.AI.GeminiAPIKey == "" {
+		return fmt.Errorf("GEMINI_API_KEY is required")
 	}
 	return nil
 }

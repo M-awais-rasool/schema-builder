@@ -51,11 +51,18 @@ func main() {
 	userService := services.NewUserService(repos.User)
 	schemaService := services.NewSchemaService(repos.Schema, repos.User)
 
+	aiService, err := services.NewAIService(cfg)
+	if err != nil {
+		loggerInstance.Fatalf("Failed to initialize AI service: %v", err)
+	}
+	defer aiService.Close()
+
 	authMiddleware := middleware.NewAuthMiddleware(cognitoService, userService)
 	securityMiddleware := middleware.NewSecurityMiddleware(cfg)
 
 	authHandler := handlers.NewAuthHandler(cognitoService, userService)
 	schemaHandler := handlers.NewSchemaHandler(schemaService)
+	aiHandler := handlers.NewAIHandler(aiService)
 
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -63,7 +70,7 @@ func main() {
 
 	r := gin.New()
 
-	routes.SetupRoutes(r, authHandler, schemaHandler, authMiddleware, securityMiddleware)
+	routes.SetupRoutes(r, authHandler, schemaHandler, aiHandler, authMiddleware, securityMiddleware)
 
 	server := &http.Server{
 		Addr:    ":" + cfg.Server.Port,

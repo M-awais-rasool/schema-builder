@@ -85,12 +85,3 @@ func (s *CognitoService) GetUser(accessToken string) (*models.User, error) {
 func (s *CognitoService) ValidateToken(accessToken string) (*models.User, error) {
 	return s.GetUser(accessToken)
 }
-
-func (s *CognitoService) computeSecretHash(username string) *string {
-	if s.clientSecret == "" {
-		return nil
-	}
-
-	message := username + s.clientID
-	return aws.String(message)
-}

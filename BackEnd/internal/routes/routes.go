@@ -14,6 +14,7 @@ func SetupRoutes(
 	r *gin.Engine,
 	authHandler *handlers.AuthHandler,
 	schemaHandler *handlers.SchemaHandler,
+	aiHandler *handlers.AIHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	securityMiddleware *middleware.SecurityMiddleware,
 ) {
@@ -60,6 +61,11 @@ func SetupRoutes(
 			schemas.DELETE("/:id", schemaHandler.DeleteSchema)                     // Delete schema
 			schemas.POST("/:id/duplicate", schemaHandler.DuplicateSchema)          // Duplicate schema
 			schemas.PATCH("/:id/visibility", schemaHandler.ToggleSchemaVisibility) // Toggle public/private
+		}
+
+		ai := protected.Group("/ai")
+		{
+			ai.POST("/chat", aiHandler.Chat) // Send message to AI assistant
 		}
 	}
 }

@@ -10,10 +10,10 @@ import SchemaViewer from './pages/user/SchemaViewer';
 import Profile from './pages/user/Profile';
 import Settings from './pages/user/Settings';
 import './App.css';
+import LandingPage from './pages/auth/LandingPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-    console.log('ProtectedRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated);
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -22,7 +22,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+  return isAuthenticated ? <>{children}</> : <Navigate to="/landing" />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -44,10 +44,10 @@ function AppRoutes() {
     <Router>
       <div className="App">
         <Routes>
+          <Route path='/landing' element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
           <Route path="/designer" element={<ProtectedRoute><Designer /></ProtectedRoute>} />
-          
           <Route path="/export/:schemaId" element={<ProtectedRoute><SchemaViewer /></ProtectedRoute>} />
 
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

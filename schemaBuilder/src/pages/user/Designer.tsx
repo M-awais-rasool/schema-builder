@@ -54,7 +54,7 @@ const Designer: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [, setReactFlowInstance] = useState<any>(null);
 
-  const { chatMessages, currentMessage, setCurrentMessage, sendMessage } = useChatFunctionality();
+  const { chatMessages, currentMessage, setCurrentMessage, sendMessage, isLoading } = useChatFunctionality();
   
   const { 
     createSchema, 
@@ -129,6 +129,102 @@ const Designer: React.FC = () => {
       }
     }
   }, [nodes, selectedNode]);
+
+  useEffect(() => {
+    const lastMessage = chatMessages[chatMessages.length - 1];
+    if (lastMessage?.sender === 'ai' && lastMessage.schemaAction) {
+      const action = lastMessage.schemaAction;
+      console.log("Processing AI schema action:", action);
+      if ((action.type === 'create_tables' || action.type === 'create_schema') && action.tables) {
+        const startX = 100;
+        const startY = 100;
+        const tableSpacingX = 300;
+        const tableSpacingY = 200;
+        const tablesPerRow = 3;
+        
+        const newNodes = action.tables.map((table: any, index: number) => {
+          console.log(`Processing table ${index}:`, table);
+          const row = Math.floor(index / tablesPerRow);
+          const col = index % tablesPerRow;
+          
+          const newNode = {
+            id: table.id || `table-${Date.now()}-${index}`,
+            type: 'table',
+            position: { 
+              x: table.position?.x || startX + (col * tableSpacingX), 
+              y: table.position?.y || startY + (row * tableSpacingY) 
+            },
+            data: {
+              label: table.name || 'New Table',
+              animationDelay: index * 0.15, 
+              fields: table.fields?.map((field: any) => ({
+                id: field.id || `field-${Date.now()}-${Math.random()}`,
+                name: field.name || 'field_name',
+                type: field.type || 'VARCHAR(255)',
+                isPrimaryKey: field.is_primary_key || false,
+                isNotNull: field.is_not_null || false,
+                isUnique: field.is_unique || false,
+                defaultValue: field.default_value || '',
+                isForeignKey: field.is_foreign_key || false,
+                references: field.references ? {
+                  tableId: field.references.table_id,
+                  fieldId: field.references.field_id,
+                } : undefined,
+              })) || [
+                {
+                  id: `field-${Date.now()}`,
+                  name: 'id',
+                  type: 'INTEGER',
+                  isPrimaryKey: true,
+                  isNotNull: true,
+                  isUnique: false,
+                  defaultValue: '',
+                  isForeignKey: false,
+                }
+              ],
+            },
+          };
+          return newNode;
+        });
+
+        setNodes(prevNodes => {
+          const updatedNodes = [...prevNodes, ...newNodes];
+          return updatedNodes;
+        });
+        
+        if (action.relationships && action.relationships.length > 0) {
+          setTimeout(() => {
+            const newEdges = action.relationships!.map((rel: any) => ({
+              id: rel.id || `edge-${Date.now()}-${Math.random()}`,
+              source: rel.from,
+              target: rel.to,
+              sourceHandle: rel.from_port,
+              targetHandle: rel.to_port,
+              type: 'smoothstep',
+              animated: true,
+              style: { stroke: '#6366f1', strokeWidth: 2 },
+              label: rel.type || 'relationship',
+              labelBgStyle: { fill: '#ffffff', fillOpacity: 0.9 },
+              labelStyle: { 
+                fontSize: '12px', 
+                fontWeight: 500,
+                color: '#374151'
+              },
+            }));
+            
+            setEdges(prevEdges => [...prevEdges, ...newEdges]);
+          }, 500); 
+        }
+        
+        if (newNodes.length > 0) {
+          setTimeout(() => {
+            setSelectedNode(newNodes[0]);
+            setIsRightSidebarOpen(true);
+          }, 300);
+        }
+      }
+    }
+  }, [chatMessages, setNodes, setEdges]);
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     const latestNode = nodes.find(n => n.id === node.id) || node;
@@ -206,11 +302,8 @@ const Designer: React.FC = () => {
       <DesignerToolbar
         onNavigateHome={() => navigate('/dashboard')}
         onSave={() => setIsSaveDialogOpen(true)}
-        onDownload={() => setIsLoadDialogOpen(true)}
         onUndo={undo}
         onRedo={redo}
-        onZoomIn={() => {}}
-        onZoomOut={() => {}}
         onAddTable={addNewTable}
         onToggleSQL={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
         canUndo={canUndo}
@@ -227,6 +320,7 @@ const Designer: React.FC = () => {
           currentMessage={currentMessage}
           setCurrentMessage={setCurrentMessage}
           onSendMessage={sendMessage}
+          isLoading={isLoading}
         />
 
         <div className="flex-1 relative bg-gray-50">
