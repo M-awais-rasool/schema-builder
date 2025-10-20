@@ -24,6 +24,18 @@
   .animate-bounce-slow {
     animation: bounce 3s infinite;
   }
+
+  /* Landing page specific animations */
+  .sliding-vertical {
+    background: linear-gradient(-90deg, transparent, rgba(0,0,0,0.04), transparent);
+    background-size: 400% 400%;
+    animation: slide 8s ease-in-out infinite;
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(circle, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
   
   /* Custom scrollbar styles */
   .scrollbar-thin {
@@ -92,6 +104,15 @@
     }
     100% {
       background-position: 200% 0;
+    }
+  }
+
+  @keyframes slide {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
     }
   }
   
