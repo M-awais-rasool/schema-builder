@@ -3,7 +3,6 @@ export const awsConfig = {
     Cognito: {
       userPoolId: import.meta.env.VITE_AWS_USER_POOL_ID || '',
       userPoolClientId: import.meta.env.VITE_AWS_USER_POOL_CLIENT_ID || '',
-      identityPoolId: import.meta.env.VITE_AWS_IDENTITY_POOL_ID || undefined,
       allowGuestAccess: false,
       signUpVerificationMethod: 'code' as const,
       userAttributes: {
@@ -23,10 +22,11 @@ export const awsConfig = {
       loginWith: {
         oauth: {
           domain: import.meta.env.VITE_AWS_COGNITO_DOMAIN || '',
-          scopes: ['openid', 'email', 'profile'],
-          redirectSignIn: [import.meta.env.VITE_APP_URL || 'http://localhost:5173/'],
+          scopes: ['aws.cognito.signin.user.admin','email', 'openid', 'profile'],
+          redirectSignIn: [`${import.meta.env.VITE_APP_URL || 'http://localhost:5173'}/auth/callback`],
           redirectSignOut: [import.meta.env.VITE_APP_URL || 'http://localhost:5173/'],
           responseType: 'code' as const,
+          providers: ['Google' as const],
         },
       },
     },
@@ -36,14 +36,16 @@ export const awsConfig = {
 const ENV_VARS = {
   VITE_AWS_REGION: import.meta.env.VITE_AWS_REGION,
   VITE_AWS_USER_POOL_ID: import.meta.env.VITE_AWS_USER_POOL_ID,
-  VITE_AWS_USER_POOL_CLIENT_ID: import.meta.env.VITE_AWS_USER_POOL_CLIENT_ID
+  VITE_AWS_USER_POOL_CLIENT_ID: import.meta.env.VITE_AWS_USER_POOL_CLIENT_ID,
+  VITE_AWS_COGNITO_DOMAIN: import.meta.env.VITE_AWS_COGNITO_DOMAIN
 };
 
 export const validateAwsConfig = () => {
   const requiredEnvVars = [
     'VITE_AWS_REGION',
     'VITE_AWS_USER_POOL_ID', 
-    'VITE_AWS_USER_POOL_CLIENT_ID'
+    'VITE_AWS_USER_POOL_CLIENT_ID',
+    'VITE_AWS_COGNITO_DOMAIN'
   ];
 
   const missingVars = requiredEnvVars.filter(envVar => !ENV_VARS[envVar as keyof typeof ENV_VARS]);

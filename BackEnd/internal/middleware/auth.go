@@ -63,23 +63,37 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 
 		user, err := m.userService.GetUserByCognitoSub(c.Request.Context(), cognitoUser.CognitoSub)
 		if err != nil {
-			createReq := &models.CreateUserRequest{
-				CognitoSub: cognitoUser.CognitoSub,
-				Email:      cognitoUser.Email,
-				FirstName:  cognitoUser.FirstName,
-				LastName:   cognitoUser.LastName,
-				Username:   cognitoUser.Username,
-			}
+			userByEmail, emailErr := m.userService.GetUserByEmail(c.Request.Context(), cognitoUser.Email)
+			if emailErr == nil && userByEmail != nil {
+				linkedUser, linkErr := m.userService.LinkCognitoIdentity(c.Request.Context(), userByEmail.ID, cognitoUser.CognitoSub)
+				if linkErr != nil {
+					c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+						Error:   "internal_error",
+						Message: "Failed to link identity",
+					})
+					c.Abort()
+					return
+				}
+				user = linkedUser
+			} else {
+				createReq := &models.CreateUserRequest{
+					CognitoSub: cognitoUser.CognitoSub,
+					Email:      cognitoUser.Email,
+					FirstName:  cognitoUser.FirstName,
+					LastName:   cognitoUser.LastName,
+					Username:   cognitoUser.Username,
+				}
 
-			user, err = m.userService.CreateUser(c.Request.Context(), createReq)
-			if err != nil {
-				m.log.Errorf("Failed to create user: %v", err)
-				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-					Error:   "internal_error",
-					Message: "Failed to create user",
-				})
-				c.Abort()
-				return
+				user, err = m.userService.CreateUser(c.Request.Context(), createReq)
+				if err != nil {
+					m.log.Errorf("Failed to create user: %v", err)
+					c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+						Error:   "internal_error",
+						Message: "Failed to create user",
+					})
+					c.Abort()
+					return
+				}
 			}
 		}
 

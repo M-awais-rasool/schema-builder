@@ -55,6 +55,7 @@ export interface AuthContextType extends AuthState {
   logout: () => Promise<void>;
   getCurrentUser: () => Promise<void>;
   refreshAuth: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 export interface CognitoUser {

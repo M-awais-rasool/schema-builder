@@ -15,6 +15,7 @@ type UserRepository interface {
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
 	GetByCognitoSub(ctx context.Context, cognitoSub string) (*models.User, error)
 	Update(ctx context.Context, id primitive.ObjectID, update *models.UpdateUserRequest) error
+	UpdateCognitoSub(ctx context.Context, id primitive.ObjectID, cognitoSub string) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	List(ctx context.Context, page, limit int) ([]*models.User, int64, error)
 }

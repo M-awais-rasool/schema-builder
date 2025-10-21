@@ -100,6 +100,19 @@ func (s *UserService) UpdateUser(ctx context.Context, id primitive.ObjectID, req
 	return updatedUser, nil
 }
 
+func (s *UserService) LinkCognitoIdentity(ctx context.Context, id primitive.ObjectID, cognitoSub string) (*models.User, error) {
+	if err := s.userRepo.UpdateCognitoSub(ctx, id, cognitoSub); err != nil {
+		return nil, fmt.Errorf("failed to link Cognito identity: %v", err)
+	}
+
+	user, err := s.userRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated user: %v", err)
+	}
+
+	return user, nil
+}
+
 func (s *UserService) DeleteUser(ctx context.Context, id primitive.ObjectID) error {
 	_, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {

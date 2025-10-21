@@ -104,6 +104,24 @@ func (r *userRepository) Update(ctx context.Context, id primitive.ObjectID, upda
 	return nil
 }
 
+func (r *userRepository) UpdateCognitoSub(ctx context.Context, id primitive.ObjectID, cognitoSub string) error {
+	updateDoc := bson.M{
+		"cognito_sub": cognitoSub,
+		"updated_at":  time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"_id": id},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update cognito_sub: %v", err)
+	}
+
+	return nil
+}
+
 func (r *userRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
 	_, err := r.collection.DeleteOne(ctx, bson.M{"_id": id})
 	if err != nil {

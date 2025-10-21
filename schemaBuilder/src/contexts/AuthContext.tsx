@@ -11,6 +11,7 @@ import {
   signOut,
   getCurrentUser,
   fetchAuthSession,
+  signInWithRedirect,
 } from 'aws-amplify/auth';
 import { awsConfig, validateAwsConfig } from '../config/aws-config';
 import type {
@@ -24,7 +25,7 @@ import type {
   User,
 } from '../types/auth';
 
-Amplify.configure(awsConfig);
+Amplify.configure(awsConfig as any);
 
 if (!validateAwsConfig()) {
   console.error('AWS configuration is incomplete. Authentication may not work properly.');
@@ -88,15 +89,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const mapCognitoUserToUser = (cognitoUser: any): User => {
     const attributes = cognitoUser.signInDetails?.loginId
       ? { email: cognitoUser.signInDetails.loginId }
-      : {};
+      : cognitoUser.attributes || {};
+    const email = attributes.email || cognitoUser.username || '';
+    const firstName = attributes.given_name || attributes.name?.split(' ')[0] || '';
+    const lastName = attributes.family_name || attributes.name?.split(' ').slice(1).join(' ') || '';
+    const username = attributes.preferred_username || cognitoUser.username || email.split('@')[0];
 
     return {
       id: cognitoUser.userId || cognitoUser.username,
-      username: cognitoUser.username,
-      email: attributes.email || cognitoUser.username,
-      firstName: '',
-      lastName: '',
-      isVerified: true,
+      username: username,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      avatar: attributes.picture || '',
+      isVerified: true, 
     };
   };
 
@@ -277,6 +283,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async (): Promise<void> => {
+    try {
+      await signInWithRedirect({ 
+        provider: 'Google' as const,
+      });
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      dispatch({ 
+        type: 'AUTH_ERROR', 
+        payload: error.message || 'Google sign-in failed. Please try again.' 
+      });
+    }
+  };
+
   const getCurrentUserData = async (): Promise<void> => {
     try {
       const user = await getCurrentUser();
@@ -331,6 +351,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     getCurrentUser: getCurrentUserData,
     refreshAuth,
+    signInWithGoogle,
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

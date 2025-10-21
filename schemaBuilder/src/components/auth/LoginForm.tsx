@@ -1,4 +1,4 @@
-import { Database, ArrowRight, Github, Mail, AlertCircle } from "lucide-react";
+import { Database, ArrowRight, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { Label } from "./label";
 import { Input } from "./input";
 import { Button } from "./button";
+import { GoogleOAuthButton } from "./GoogleOAuthButton";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -20,7 +21,7 @@ export function LoginForm() {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   
-  const { login, signUp, confirmSignUp, resendConfirmationCode } = useAuth();
+  const { login, signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,19 +63,16 @@ export function LoginForm() {
           await login({ email, password });
           navigate('/dashboard');
         } catch (loginError: any) {
-          // Check if the error indicates unverified email
           if (loginError.message?.includes('verify your email') || 
               loginError.message?.includes('CONFIRM_SIGN_UP') ||
               loginError.name === 'UserNotConfirmedException') {
-            // User exists but email not verified - show verification form
             setShowVerification(true);
-            // Ensure we have a username for verification - use email as fallback
             if (!username && email) {
               setUsername(email);
             }
             setError('Please verify your email address. Check your inbox for the verification code.');
           } else {
-            throw loginError; // Re-throw other errors
+            throw loginError;
           }
         }
       }
@@ -92,7 +90,6 @@ export function LoginForm() {
     setError(null);
 
     try {
-      // Use username if available, otherwise fall back to email
       const identifier = username || email;
       await confirmSignUp({
         username: identifier,
@@ -133,6 +130,22 @@ export function LoginForm() {
     setFirstName("");
     setLastName("");
     setUsername("");
+  };
+
+  const handleGoogleSignIn = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      console.error('Google sign-in error:', err);
+      setError(err.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -456,47 +469,17 @@ export function LoginForm() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="mb-6">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.85 }}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
               >
-                <Button
-                  variant="outline"
-                  className="w-full h-11 group relative overflow-hidden bg-background/50 hover:bg-background hover:border-primary/30"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    console.log('GitHub login clicked');
-                  }}
-                >
-                  <Github className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
-                  GitHub
-                </Button>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.9 }}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  variant="outline"
-                  className="w-full h-11 group relative overflow-hidden bg-background/50 hover:bg-background hover:border-primary/30"
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    console.log('Google login clicked');
-                  }}
-                >
-                  <Mail className="h-4 w-4 mr-2 transition-transform duration-200 group-hover:scale-110" />
-                  Google
-                </Button>
+                <GoogleOAuthButton
+                  onClick={handleGoogleSignIn}
+                  isLoading={isLoading}
+                  disabled={isLoading}
+                />
               </motion.div>
             </div>
 

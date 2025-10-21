@@ -16,24 +16,8 @@ export const useApi = () => {
       if (session.tokens?.accessToken) {
         return session.tokens.accessToken.toString();
       }
-      const cognitoKeys = Object.keys(localStorage).filter(key => 
-        key.includes('CognitoIdentityServiceProvider') && key.includes('accessToken')
-      );
-      if (cognitoKeys.length > 0) {
-        const token = localStorage.getItem(cognitoKeys[0]);
-        return token;
-      }
       return null;
     } catch (error) {
-      const cognitoKeys = Object.keys(localStorage).filter(key => 
-        key.includes('CognitoIdentityServiceProvider') && key.includes('accessToken')
-      );
-      
-      if (cognitoKeys.length > 0) {
-        const token = localStorage.getItem(cognitoKeys[0]);
-        return token;
-      }
-      
       return null;
     }
   };

@@ -19,7 +19,6 @@ type CognitoService struct {
 	client       *cognitoidentityprovider.CognitoIdentityProvider
 	userPoolID   string
 	clientID     string
-	clientSecret string
 	log          *logrus.Logger
 }
 
@@ -44,7 +43,6 @@ func NewCognitoService(cfg *config.Config) (*CognitoService, error) {
 		client:       client,
 		userPoolID:   cfg.AWS.CognitoUserPoolID,
 		clientID:     cfg.AWS.CognitoClientID,
-		clientSecret: cfg.AWS.CognitoClientSecret,
 		log:          log,
 	}, nil
 }

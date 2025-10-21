@@ -79,9 +79,8 @@ export default function Navbar() {
               <i className="bi bi-discord" />
             </a>
             
-            {/* CTA Button */}
             <Link
-              to="/editor"
+              to="/login"
               className="ml-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
             >
               Get Started
@@ -112,7 +111,6 @@ export default function Navbar() {
         className="bg-white"
       >
         <div className="bg-white p-4">
-          {/* Mobile Navigation Links */}
           <div className="space-y-2 mb-8">
             <Link
               className="flex items-center space-x-3 hover:bg-gray-50 block p-4 text-lg font-medium text-black transition-all duration-300 rounded-lg group"
@@ -148,7 +146,6 @@ export default function Navbar() {
             </Link>
           </div>
           
-          {/* Social Links */}
           <div className="border-t border-gray-200 pt-6">
             <p className="text-sm font-medium text-gray-600 mb-4">Connect with us</p>
             <div className="flex space-x-4">
@@ -179,7 +176,6 @@ export default function Navbar() {
             </div>
           </div>
           
-          {/* CTA Button */}
           <div className="mt-8">
             <Link
               to="/editor"
