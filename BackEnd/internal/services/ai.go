@@ -33,7 +33,7 @@ type ChatResponse struct {
 }
 
 type SchemaAction struct {
-	Type          string                 `json:"type"` // "create_tables", "create_relationship", "modify_schema"
+	Type          string                 `json:"type"` 
 	Data          map[string]interface{} `json:"data"`
 	Tables        []models.Table         `json:"tables,omitempty"`
 	Relationships []Relationship         `json:"relationships,omitempty"`
@@ -70,10 +70,8 @@ func NewAIService(cfg *config.Config) (*AIService, error) {
 func (s *AIService) Chat(ctx context.Context, req *ChatRequest) (*ChatResponse, error) {
 	s.log.Infof("Processing chat request: %s", req.Message)
 
-	// Create the generative model
 	model := s.client.GenerativeModel("gemini-2.0-flash")
 
-	// Configure the model for schema building tasks
 	model.SystemInstruction = &genai.Content{
 		Parts: []genai.Part{genai.Text(`You are a database schema design assistant. Your job is to help users create database schemas through natural language.
 
@@ -142,10 +140,8 @@ Position tables in a grid layout, spacing them 300px apart horizontally and 200p
 Be conversational and helpful, explaining your design decisions.`)},
 	}
 
-	// Create the chat session
 	cs := model.StartChat()
 
-	// Send the user's message
 	resp, err := cs.SendMessage(ctx, genai.Text(req.Message))
 	if err != nil {
 		s.log.Errorf("Failed to send message to Gemini: %v", err)
@@ -155,7 +151,6 @@ Be conversational and helpful, explaining your design decisions.`)},
 		}, nil
 	}
 
-	// Extract the response text
 	var responseText string
 	for _, candidate := range resp.Candidates {
 		if candidate.Content != nil {
@@ -169,7 +164,6 @@ Be conversational and helpful, explaining your design decisions.`)},
 
 	s.log.Infof("Gemini response: %s", responseText)
 
-	// Parse the response for schema actions
 	schemaAction, cleanText := s.extractSchemaAction(responseText)
 
 	s.log.Infof("Extracted schema action: %+v", schemaAction)
@@ -186,13 +180,8 @@ Be conversational and helpful, explaining your design decisions.`)},
 }
 
 func (s *AIService) extractSchemaAction(text string) (*SchemaAction, string) {
-	// Look for JSON schema definitions wrapped in <SCHEMA_JSON> tags
-	// Handle both direct tags and tags inside code blocks
-	// Using (?s) flag to make . match newlines
 	re := regexp.MustCompile("(?s)(?:```json\\s*)?<SCHEMA_JSON>(.*?)</SCHEMA_JSON>(?:\\s*```)?")
 	matches := re.FindStringSubmatch(text)
-
-	s.log.Infof("Regex matches found: %d", len(matches))
 
 	if len(matches) < 2 {
 		s.log.Warn("No SCHEMA_JSON tags found in response")
@@ -201,9 +190,6 @@ func (s *AIService) extractSchemaAction(text string) (*SchemaAction, string) {
 	}
 
 	jsonStr := strings.TrimSpace(matches[1])
-	s.log.Infof("Extracted JSON string: %s", jsonStr)
-
-	// Remove the schema JSON from the response text
 	cleanText := re.ReplaceAllString(text, "")
 	cleanText = strings.TrimSpace(cleanText)
 
@@ -214,14 +200,11 @@ func (s *AIService) extractSchemaAction(text string) (*SchemaAction, string) {
 		return nil, cleanText
 	}
 
-	s.log.Infof("Parsed action data: %+v", actionData)
-
 	action := &SchemaAction{
 		Type: "create_schema",
 		Data: actionData,
 	}
 
-	// Convert the tables data to proper models.Table structs
 	if tablesData, ok := actionData["tables"].([]interface{}); ok {
 		for _, tableData := range tablesData {
 			if tableMap, ok := tableData.(map[string]interface{}); ok {
@@ -233,7 +216,6 @@ func (s *AIService) extractSchemaAction(text string) (*SchemaAction, string) {
 		}
 	}
 
-	// Convert relationships data
 	if relationshipsData, ok := actionData["relationships"].([]interface{}); ok {
 		for _, relationshipData := range relationshipsData {
 			if relationshipMap, ok := relationshipData.(map[string]interface{}); ok {
@@ -283,7 +265,6 @@ func (s *AIService) convertToTable(data map[string]interface{}) *models.Table {
 		table.Name = name
 	}
 
-	// Handle position
 	if posData, ok := data["position"].(map[string]interface{}); ok {
 		if x, ok := posData["x"].(float64); ok {
 			table.Position.X = x
@@ -293,7 +274,6 @@ func (s *AIService) convertToTable(data map[string]interface{}) *models.Table {
 		}
 	}
 
-	// Handle fields
 	if fieldsData, ok := data["fields"].([]interface{}); ok {
 		for _, fieldData := range fieldsData {
 			if fieldMap, ok := fieldData.(map[string]interface{}); ok {
@@ -336,7 +316,6 @@ func (s *AIService) convertToField(data map[string]interface{}) *models.Field {
 		field.DefaultValue = defaultValue
 	}
 
-	// Handle references
 	if referencesData, ok := data["references"].(map[string]interface{}); ok {
 		references := &models.Reference{}
 		if tableID, ok := referencesData["table_id"].(string); ok {

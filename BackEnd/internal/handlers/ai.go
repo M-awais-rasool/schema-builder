@@ -60,7 +60,6 @@ func (h *AIHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	// Generate session ID if not provided
 	if req.SessionID == "" {
 		req.SessionID = user.ID.Hex()
 	}

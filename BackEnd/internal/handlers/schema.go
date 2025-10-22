@@ -178,6 +178,43 @@ func (h *SchemaHandler) ListPublicSchemas(c *gin.Context) {
 	})
 }
 
+func (h *SchemaHandler) ListOtherUsersSchemas(c *gin.Context) {
+	user, exists := middleware.GetUserFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+			Error:   "unauthorized",
+			Message: "User not found in context",
+		})
+		return
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	schemas, total, err := h.schemaService.GetOtherUsersSchemas(c.Request.Context(), user.ID, page, limit)
+	if err != nil {
+		h.log.Errorf("Failed to list other users' schemas: %v", err)
+		c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+			Error:   "fetch_failed",
+			Message: "Failed to fetch other users' schemas",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.SuccessResponse{
+		Message: "Other users' schemas retrieved successfully",
+		Data: map[string]interface{}{
+			"schemas": schemas,
+			"pagination": map[string]interface{}{
+				"page":       page,
+				"limit":      limit,
+				"total":      total,
+				"totalPages": (total + int64(limit) - 1) / int64(limit),
+			},
+		},
+	})
+}
+
 func (h *SchemaHandler) UpdateSchema(c *gin.Context) {
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {

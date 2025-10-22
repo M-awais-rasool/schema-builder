@@ -305,6 +305,32 @@ export const useSchemaOperations = () => {
     }
   }, [api]);
 
+  const getOtherUsersSchemas = useCallback(async (page: number = 1, limit: number = 10) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await api.get('/schemas/others', { 
+        page: page.toString(), 
+        limit: limit.toString() 
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to get other users\' schemas');
+      }
+
+      const data = await response.json();
+      return data.data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get other users\' schemas';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [api]);
+
   const deleteSchema = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
@@ -379,6 +405,7 @@ export const useSchemaOperations = () => {
     getSchema,
     getUserSchemas,
     getPublicSchemas,
+    getOtherUsersSchemas,
     deleteSchema,
     duplicateSchema,
     toggleSchemaVisibility,

@@ -147,3 +147,35 @@ func (r *schemaRepository) GetPublicSchemas(ctx context.Context, page, limit int
 
 	return schemas, total, nil
 }
+
+func (r *schemaRepository) GetOtherUsersSchemas(ctx context.Context, excludeUserID primitive.ObjectID, page, limit int) ([]*models.Schema, int64, error) {
+	skip := (page - 1) * limit
+
+	opts := options.Find().
+		SetSort(bson.D{{Key: "updated_at", Value: -1}}).
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit))
+
+	filter := bson.M{
+		"user_id":   bson.M{"$ne": excludeUserID},
+		"is_public": true,
+	}
+
+	cursor, err := r.collection.Find(ctx, filter, opts)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to find other users' schemas: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var schemas []*models.Schema
+	if err := cursor.All(ctx, &schemas); err != nil {
+		return nil, 0, fmt.Errorf("failed to decode other users' schemas: %v", err)
+	}
+
+	total, err := r.collection.CountDocuments(ctx, filter)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count other users' schemas: %v", err)
+	}
+
+	return schemas, total, nil
+}

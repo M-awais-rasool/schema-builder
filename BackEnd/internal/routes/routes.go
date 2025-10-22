@@ -56,6 +56,7 @@ func SetupRoutes(
 		{
 			schemas.POST("", schemaHandler.CreateSchema)                           // Create a new schema
 			schemas.GET("", schemaHandler.ListUserSchemas)                         // List user's schemas
+			schemas.GET("/others", schemaHandler.ListOtherUsersSchemas)            // List other users' schemas
 			schemas.GET("/:id", schemaHandler.GetSchema)                           // Get specific schema
 			schemas.PUT("/:id", schemaHandler.UpdateSchema)                        // Update schema
 			schemas.DELETE("/:id", schemaHandler.DeleteSchema)                     // Delete schema

@@ -96,6 +96,23 @@ func (s *SchemaService) GetPublicSchemas(ctx context.Context, page, limit int) (
 	return schemas, total, nil
 }
 
+func (s *SchemaService) GetOtherUsersSchemas(ctx context.Context, excludeUserID primitive.ObjectID, page, limit int) ([]*models.Schema, int64, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 10
+	}
+
+	schemas, total, err := s.schemaRepo.GetOtherUsersSchemas(ctx, excludeUserID, page, limit)
+	if err != nil {
+		s.log.Errorf("Failed to get other users' schemas: %v", err)
+		return nil, 0, fmt.Errorf("failed to get other users' schemas: %v", err)
+	}
+
+	return schemas, total, nil
+}
+
 func (s *SchemaService) UpdateSchema(ctx context.Context, id primitive.ObjectID, userID primitive.ObjectID, req *models.UpdateSchemaRequest) (*models.Schema, error) {
 	schema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
@@ -113,7 +130,7 @@ func (s *SchemaService) UpdateSchema(ctx context.Context, id primitive.ObjectID,
 
 	updatedSchema, err := s.schemaRepo.GetByID(ctx, id)
 	if err != nil {
-		return schema, nil 
+		return schema, nil
 	}
 
 	s.log.Infof("Schema updated successfully: %s", id.Hex())
@@ -149,7 +166,7 @@ func (s *SchemaService) DuplicateSchema(ctx context.Context, id primitive.Object
 		Name:        newName,
 		Description: fmt.Sprintf("Copy of %s", originalSchema.Name),
 		Tables:      originalSchema.Tables,
-		IsPublic:    false, 
+		IsPublic:    false,
 	}
 
 	return s.CreateSchema(ctx, userID, duplicateReq)

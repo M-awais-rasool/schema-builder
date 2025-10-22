@@ -128,7 +128,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         username: credentials.email,
         password: credentials.password,
       });
-      console.log('Login nextStep:', nextStep, isSignedIn);
       if (isSignedIn) {
         const user = await getCurrentUser();
         const mappedUser = mapCognitoUserToUser(user);
@@ -146,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('Login error:', error);
 
-      if (error.message?.includes('Incorrect username or password')) {
+      if (error.message?.includes('Incorrect username or password.')) {
         const needsVerification = await checkIfUserNeedsVerification(credentials.email);
         if (needsVerification) {
           const unverifiedError = new Error('Please verify your email address before signing in.');

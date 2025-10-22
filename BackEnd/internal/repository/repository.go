@@ -27,6 +27,7 @@ type SchemaRepository interface {
 	Update(ctx context.Context, id primitive.ObjectID, update *models.UpdateSchemaRequest) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	GetPublicSchemas(ctx context.Context, page, limit int) ([]*models.Schema, int64, error)
+	GetOtherUsersSchemas(ctx context.Context, excludeUserID primitive.ObjectID, page, limit int) ([]*models.Schema, int64, error)
 }
 
 type Repositories struct {
