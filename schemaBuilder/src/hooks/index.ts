@@ -4,4 +4,3 @@ export { useChatFunctionality } from './useChatFunctionality';
 export { useHistoryManagement } from './useHistoryManagement';
 export { useRelationshipOperations } from './useRelationshipOperations';
 export { useSchemaOperations } from './useSchemaOperations';
-export { useApi } from './useApi';

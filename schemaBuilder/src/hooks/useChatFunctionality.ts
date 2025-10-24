@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ChatMessage } from '../types/designer';
-import { useApi } from './useApi';
+import { aiApi } from '../services/api';
 
 const initialMessage: ChatMessage = {
   id: '1',
@@ -13,9 +13,6 @@ export const useChatFunctionality = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([initialMessage]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const api = useApi();
-
-
 
   const sendMessage = useCallback(async () => {
     if (!currentMessage.trim()) return;
@@ -33,24 +30,16 @@ export const useChatFunctionality = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/ai/chat', {
-        message: messageToSend,
-        session_id: `session-${Date.now()}`
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const aiResponse: ChatMessage = {
-          id: `ai-${Date.now()}`,
-          content: data.data.message,
-          sender: 'ai',
-          timestamp: new Date(),
-          schemaAction: data.data.schema_action
-        };
-        setChatMessages(prev => [...prev, aiResponse]);
-      } else {
-        throw new Error('Failed to get AI response');
-      }
+      const response = await aiApi.chat(messageToSend, `session-${Date.now()}`);
+      
+      const aiResponse: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        content: response.data.message,
+        sender: 'ai',
+        timestamp: new Date(),
+        schemaAction: response.data.schema_action
+      };
+      setChatMessages(prev => [...prev, aiResponse]);
     } catch (error) {
       console.error('AI chat error:', error);
       const errorResponse: ChatMessage = {
@@ -63,7 +52,7 @@ export const useChatFunctionality = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMessage, api]);
+  }, [currentMessage]);
 
   return {
     chatMessages,

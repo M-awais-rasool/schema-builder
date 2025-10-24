@@ -43,12 +43,12 @@ func main() {
 
 	repos := repository.NewRepositories(db)
 
-	cognitoService, err := services.NewCognitoService(cfg)
-	if err != nil {
-		loggerInstance.Fatalf("Failed to initialize Cognito service: %v", err)
-	}
+	jwtService := services.NewJWTService(cfg.JWT.Secret, cfg.JWT.ExpiresIn)
+	passwordService := services.NewPasswordService(cfg.Security.BcryptCost)
+	emailService := services.NewEmailService(&cfg.Email)
 
 	userService := services.NewUserService(repos.User)
+	authService := services.NewAuthService(repos.User, jwtService, passwordService, emailService)
 	schemaService := services.NewSchemaService(repos.Schema, repos.User)
 
 	aiService, err := services.NewAIService(cfg)
@@ -57,10 +57,10 @@ func main() {
 	}
 	defer aiService.Close()
 
-	authMiddleware := middleware.NewAuthMiddleware(cognitoService, userService)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService, userService)
 	securityMiddleware := middleware.NewSecurityMiddleware(cfg)
 
-	authHandler := handlers.NewAuthHandler(cognitoService, userService)
+	authHandler := handlers.NewAuthHandler(authService, userService)
 	schemaHandler := handlers.NewSchemaHandler(schemaService)
 	aiHandler := handlers.NewAIHandler(aiService)
 

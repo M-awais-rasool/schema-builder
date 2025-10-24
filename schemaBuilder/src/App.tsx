@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/auth/Login';
+import VerificationPage from './pages/auth/VerificationPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import Dashboard from './pages/user/Dashboard';
 import Designer from './pages/user/Designer';
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Routes>
           <Route path='/landing' element={<PublicRoute><LandingPage /></PublicRoute>} />
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/verify" element={<PublicRoute><VerificationPage /></PublicRoute>} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
           <Route path="/designer" element={<ProtectedRoute><Designer /></ProtectedRoute>} />

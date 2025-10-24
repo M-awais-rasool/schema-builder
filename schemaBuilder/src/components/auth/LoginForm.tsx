@@ -18,10 +18,9 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSignUpMode, setIsSignUpMode] = useState(false);
-  const [showVerification, setShowVerification] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+
   
-  const { login, signUp, confirmSignUp, resendConfirmationCode, signInWithGoogle } = useAuth();
+  const { login, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +56,13 @@ export function LoginForm() {
           lastName,
           username,
         });
-        setShowVerification(true);
+        
+        navigate(`/verify?email=${encodeURIComponent(email)}`, {
+          state: {
+            message: 'Account created successfully! Please check your email for a verification code.',
+            type: 'info'
+          }
+        });
       } else {
         try {
           await login({ email, password });
@@ -65,12 +70,15 @@ export function LoginForm() {
         } catch (loginError: any) {
           if (loginError.message?.includes('verify your email') || 
               loginError.message?.includes('CONFIRM_SIGN_UP') ||
+              loginError.message?.includes('not verified') ||
               loginError.name === 'UserNotConfirmedException') {
-            setShowVerification(true);
-            if (!username && email) {
-              setUsername(email);
-            }
-            setError('Please verify your email address. Check your inbox for the verification code.');
+            navigate(`/verify?email=${encodeURIComponent(email)}&reason=login_failed`, {
+              state: {
+                message: 'Please verify your email address before logging in.',
+                type: 'error'
+              }
+            });
+            return; 
           } else {
             throw loginError;
           }
@@ -84,42 +92,7 @@ export function LoginForm() {
     }
   };
 
-  const handleVerification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const identifier = username || email;
-      await confirmSignUp({
-        username: identifier,
-        confirmationCode: verificationCode,
-      });
-      setShowVerification(false);
-      setIsSignUpMode(false);
-      setVerificationCode('');
-      alert('Account verified successfully! Please log in.');
-    } catch (err: any) {
-      setError(err.message || 'Verification failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const identifier = username || email;
-      await resendConfirmationCode(identifier);
-      alert('Verification code sent! Please check your email.');
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend verification code.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const toggleMode = () => {
     setIsSignUpMode(!isSignUpMode);
@@ -185,7 +158,7 @@ export function LoginForm() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          {showVerification ? 'Verify Your Email' : isSignUpMode ? 'Create Account' : 'Welcome Back'}
+          {isSignUpMode ? 'Create Account' : 'Welcome Back'}
         </motion.h1>
         <motion.p
           className="text-muted-foreground"
@@ -193,9 +166,7 @@ export function LoginForm() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          {showVerification 
-            ? 'Enter the verification code sent to your email'
-            : isSignUpMode 
+          {isSignUpMode 
             ? 'Create your account to start designing database schemas'
             : 'Design your database schemas with ease'
           }
@@ -222,7 +193,7 @@ export function LoginForm() {
           }}
         />
 
-        <form onSubmit={showVerification ? handleVerification : handleSubmit} className="space-y-5 relative" noValidate>
+        <form onSubmit={handleSubmit} className="space-y-5 relative" noValidate>
           {error && (
             <motion.div
               className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2"
@@ -234,29 +205,7 @@ export function LoginForm() {
             </motion.div>
           )}
 
-          {showVerification ? (
-            <motion.div
-              className="space-y-2"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-            >
-              <Label htmlFor="verificationCode">Verification Code</Label>
-              <div className="relative">
-                <Input
-                  id="verificationCode"
-                  type="text"
-                  placeholder="Enter verification code"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="bg-input-background transition-all duration-200 focus:scale-[1.01] h-11 disabled:opacity-50"
-                />
-              </div>
-            </motion.div>
-          ) : (
-            <>
+
               {isSignUpMode && (
                 <>
                   <div className="grid grid-cols-2 gap-4">
@@ -418,8 +367,6 @@ export function LoginForm() {
                   </div>
                 </motion.div>
               )}
-            </>
-          )}
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -430,21 +377,21 @@ export function LoginForm() {
           >
             <Button
               type="submit"
-              disabled={isLoading || !email || !password || (isSignUpMode && (!firstName || !lastName || !username || !confirmPassword)) || (showVerification && !verificationCode)}
+              disabled={isLoading || !email || !password || (isSignUpMode && (!firstName || !lastName || !username || !confirmPassword))}
               className="w-full h-11 group relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
-                console.log(showVerification ? 'Verify button clicked' : isSignUpMode ? 'Sign up button clicked' : 'Sign in button clicked');
+                console.log(isSignUpMode ? 'Sign up button clicked' : 'Sign in button clicked');
               }}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    {showVerification ? 'Verifying...' : isSignUpMode ? 'Creating account...' : 'Signing in...'}
+                    {isSignUpMode ? 'Creating account...' : 'Signing in...'}
                   </>
                 ) : (
                   <>
-                    {showVerification ? 'Verify Email' : isSignUpMode ? 'Create Account' : 'Sign in'}
+                    {isSignUpMode ? 'Create Account' : 'Sign in'}
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                   </>
                 )}
@@ -453,8 +400,7 @@ export function LoginForm() {
           </motion.div>
         </form>
 
-        {!showVerification && (
-          <motion.div
+        <motion.div
             className="mt-6 text-center relative"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -494,41 +440,8 @@ export function LoginForm() {
               </button>
             </p>
           </motion.div>
-        )}
 
-        {showVerification && (
-          <motion.div
-            className="mt-6 text-center space-y-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.8 }}
-          >
-            <p className="text-sm text-muted-foreground">
-              Didn't receive the code?{' '}
-              <button
-                type="button"
-                className="text-primary hover:underline transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleResendCode}
-                disabled={isLoading}
-              >
-                Resend
-              </button>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              <button
-                type="button"
-                className="text-primary hover:underline transition-all duration-200"
-                onClick={() => {
-                  setShowVerification(false);
-                  setVerificationCode('');
-                  setError(null);
-                }}
-              >
-                ← Back to Login
-              </button>
-            </p>
-          </motion.div>
-        )}
+
       </motion.div>
 
       <motion.div

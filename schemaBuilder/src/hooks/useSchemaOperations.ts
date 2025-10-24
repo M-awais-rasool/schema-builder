@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useApi } from './useApi';
+import { schemaApi } from '../services/api';
 import type { Node, Edge } from 'reactflow';
 import { MarkerType } from 'reactflow';
 
@@ -74,7 +74,6 @@ export interface UpdateSchemaRequest {
 }
 
 export const useSchemaOperations = () => {
-  const api = useApi();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -172,15 +171,8 @@ export const useSchemaOperations = () => {
         is_public: isPublic,
       };
 
-      const response = await api.post('/schemas', request);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create schema');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.create(request);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create schema';
       setError(errorMessage);
@@ -188,7 +180,7 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, convertNodesToTables]);
+  }, [convertNodesToTables]);
 
   const updateSchema = useCallback(async (
     id: string,
@@ -212,15 +204,8 @@ export const useSchemaOperations = () => {
         request.tables = convertNodesToTables(updates.nodes);
       }
 
-      const response = await api.put(`/schemas/${id}`, request);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update schema');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.update(id, request);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update schema';
       setError(errorMessage);
@@ -228,22 +213,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, convertNodesToTables]);
+  }, [convertNodesToTables]);
 
   const getSchema = useCallback(async (id: string): Promise<Schema> => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.get(`/schemas/${id}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to get schema');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.getById(id);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get schema';
       setError(errorMessage);
@@ -251,25 +229,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const getUserSchemas = useCallback(async (page: number = 1, limit: number = 10) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.get('/schemas', { 
-        page: page.toString(), 
-        limit: limit.toString() 
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to get schemas');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.getUserSchemas(page, limit);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get schemas';
       setError(errorMessage);
@@ -277,25 +245,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const getPublicSchemas = useCallback(async (page: number = 1, limit: number = 10) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.get('/schemas/public', { 
-        page: page.toString(), 
-        limit: limit.toString() 
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to get public schemas');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.getPublicSchemas(page, limit);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get public schemas';
       setError(errorMessage);
@@ -303,25 +261,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const getOtherUsersSchemas = useCallback(async (page: number = 1, limit: number = 10) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.get('/schemas/others', { 
-        page: page.toString(), 
-        limit: limit.toString() 
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to get other users\' schemas');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.getOtherUsersSchemas(page, limit);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to get other users\' schemas';
       setError(errorMessage);
@@ -329,19 +277,14 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const deleteSchema = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.delete(`/schemas/${id}`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete schema');
-      }
+      await schemaApi.delete(id);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete schema';
       setError(errorMessage);
@@ -349,22 +292,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const duplicateSchema = useCallback(async (id: string, newName: string): Promise<Schema> => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.post(`/schemas/${id}/duplicate`, { name: newName });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to duplicate schema');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.duplicate(id, newName);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to duplicate schema';
       setError(errorMessage);
@@ -372,22 +308,15 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   const toggleSchemaVisibility = useCallback(async (id: string): Promise<Schema> => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await api.makeRequest(`/schemas/${id}/visibility`, { method: 'PATCH' });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to toggle schema visibility');
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await schemaApi.toggleVisibility(id);
+      return response.data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to toggle schema visibility';
       setError(errorMessage);
@@ -395,7 +324,7 @@ export const useSchemaOperations = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, []);
 
   return {
     loading,

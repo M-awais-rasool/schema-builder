@@ -37,9 +37,17 @@ func SetupRoutes(
 
 	api := r.Group("/api/v1")
 
-	// Public routes
 	public := api.Group("/")
 	{
+		public.POST("/auth/register", authHandler.Register)
+		public.POST("/auth/login", authHandler.Login)
+		public.POST("/auth/verify", authHandler.Verify)
+		public.POST("/auth/resend-code", authHandler.ResendCode)
+		public.POST("/auth/forgot-password", authHandler.ForgotPassword)
+		public.POST("/auth/reset-password", authHandler.ResetPassword)
+		public.POST("/auth/google", authHandler.GoogleAuth)
+		public.POST("/auth/check-user", authHandler.CheckUser)
+
 		public.GET("/schemas/public", schemaHandler.ListPublicSchemas)
 	}
 
@@ -54,19 +62,19 @@ func SetupRoutes(
 
 		schemas := protected.Group("/schemas")
 		{
-			schemas.POST("", schemaHandler.CreateSchema)                           // Create a new schema
-			schemas.GET("", schemaHandler.ListUserSchemas)                         // List user's schemas
-			schemas.GET("/others", schemaHandler.ListOtherUsersSchemas)            // List other users' schemas
-			schemas.GET("/:id", schemaHandler.GetSchema)                           // Get specific schema
-			schemas.PUT("/:id", schemaHandler.UpdateSchema)                        // Update schema
-			schemas.DELETE("/:id", schemaHandler.DeleteSchema)                     // Delete schema
-			schemas.POST("/:id/duplicate", schemaHandler.DuplicateSchema)          // Duplicate schema
-			schemas.PATCH("/:id/visibility", schemaHandler.ToggleSchemaVisibility) // Toggle public/private
+			schemas.POST("", schemaHandler.CreateSchema)
+			schemas.GET("", schemaHandler.ListUserSchemas)
+			schemas.GET("/others", schemaHandler.ListOtherUsersSchemas)
+			schemas.GET("/:id", schemaHandler.GetSchema)
+			schemas.PUT("/:id", schemaHandler.UpdateSchema)
+			schemas.DELETE("/:id", schemaHandler.DeleteSchema)
+			schemas.POST("/:id/duplicate", schemaHandler.DuplicateSchema)
+			schemas.PATCH("/:id/visibility", schemaHandler.ToggleSchemaVisibility)
 		}
 
 		ai := protected.Group("/ai")
 		{
-			ai.POST("/chat", aiHandler.Chat) // Send message to AI assistant
+			ai.POST("/chat", aiHandler.Chat)
 		}
 	}
 }

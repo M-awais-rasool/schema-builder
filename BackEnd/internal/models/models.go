@@ -7,24 +7,85 @@ import (
 )
 
 type User struct {
-	ID         primitive.ObjectID `bson:"_id,omitempty" json:"id"`
-	CognitoSub string             `bson:"cognito_sub" json:"cognito_sub"`
-	Email      string             `bson:"email" json:"email"`
-	FirstName  string             `bson:"first_name" json:"first_name"`
-	LastName   string             `bson:"last_name" json:"last_name"`
-	Username   string             `bson:"username" json:"username"`
-	Avatar     string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
-	IsVerified bool               `bson:"is_verified" json:"is_verified"`
-	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt  time.Time          `bson:"updated_at" json:"updated_at"`
+	ID                 primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Email              string             `bson:"email" json:"email"`
+	Password           string             `bson:"password,omitempty" json:"-"`
+	FirstName          string             `bson:"first_name" json:"first_name"`
+	LastName           string             `bson:"last_name" json:"last_name"`
+	Username           string             `bson:"username" json:"username"`
+	Avatar             string             `bson:"avatar,omitempty" json:"avatar,omitempty"`
+	IsVerified         bool               `bson:"is_verified" json:"is_verified"`
+	VerificationCode   string             `bson:"verification_code,omitempty" json:"-"`
+	VerificationExpiry time.Time          `bson:"verification_expiry,omitempty" json:"-"`
+	ResetCode          string             `bson:"reset_code,omitempty" json:"-"`
+	ResetExpiry        time.Time          `bson:"reset_expiry,omitempty" json:"-"`
+	GoogleID           string             `bson:"google_id,omitempty" json:"google_id,omitempty"`
+	Provider           string             `bson:"provider" json:"provider"`
+	CreatedAt          time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt          time.Time          `bson:"updated_at" json:"updated_at"`
+}
+
+type RegisterRequest struct {
+	Email     string `json:"email" validate:"required,email"`
+	Password  string `json:"password" validate:"required,min=8,max=100"`
+	FirstName string `json:"first_name" validate:"required,min=2,max=50"`
+	LastName  string `json:"last_name" validate:"required,min=2,max=50"`
+	Username  string `json:"username" validate:"required,min=3,max=30"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
+
+type VerifyRequest struct {
+	Email string `json:"email" validate:"required,email"`
+	Code  string `json:"code" validate:"required,len=6"`
+}
+
+type ResendCodeRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Email       string `json:"email" validate:"required,email"`
+	Code        string `json:"code" validate:"required,len=6"`
+	NewPassword string `json:"new_password" validate:"required,min=8,max=100"`
+}
+
+type GoogleAuthRequest struct {
+	IDToken string `json:"id_token" validate:"required"`
+}
+
+type CheckUserRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type CheckUserResponse struct {
+	Exists      bool   `json:"exists"`
+	Provider    string `json:"provider,omitempty"`
+	HasPassword bool   `json:"has_password,omitempty"`
+	IsVerified  bool   `json:"is_verified,omitempty"`
+}
+
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  *User  `json:"user"`
 }
 
 type CreateUserRequest struct {
-	CognitoSub string `json:"cognito_sub" validate:"required"`
 	Email      string `json:"email" validate:"required,email"`
+	Password   string `json:"password,omitempty"`
 	FirstName  string `json:"first_name" validate:"required,min=2,max=50"`
 	LastName   string `json:"last_name" validate:"required,min=2,max=50"`
 	Username   string `json:"username" validate:"required,min=3,max=30"`
+	GoogleID   string `json:"google_id,omitempty"`
+	Provider   string `json:"provider" validate:"required,oneof=email google linked"`
+	IsVerified bool   `json:"is_verified"`
 }
 
 type UpdateUserRequest struct {

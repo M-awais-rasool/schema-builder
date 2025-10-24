@@ -25,27 +25,23 @@ func NewUserService(userRepo repository.UserRepository) *UserService {
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *models.CreateUserRequest) (*models.User, error) {
-	existingUser, err := s.userRepo.GetByCognitoSub(ctx, req.CognitoSub)
-	if err == nil && existingUser != nil {
-		return existingUser, nil 
-	}
-
-	_, err = s.userRepo.GetByEmail(ctx, req.Email)
+	_, err := s.userRepo.GetByEmail(ctx, req.Email)
 	if err == nil {
-		return nil, fmt.Errorf("email already in use")
+		return nil, fmt.Errorf("user with this email already exists")
 	}
 
 	user := &models.User{
-		CognitoSub: req.CognitoSub,
 		Email:      req.Email,
+		Password:   req.Password,
 		FirstName:  req.FirstName,
 		LastName:   req.LastName,
 		Username:   req.Username,
-		IsVerified: false,
+		GoogleID:   req.GoogleID,
+		Provider:   req.Provider,
+		IsVerified: req.IsVerified,
 	}
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.log.Errorf("Failed to create user: %v", err)
 		return nil, fmt.Errorf("failed to create user: %v", err)
 	}
 
@@ -71,15 +67,6 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*models
 	return user, nil
 }
 
-func (s *UserService) GetUserByCognitoSub(ctx context.Context, cognitoSub string) (*models.User, error) {
-	user, err := s.userRepo.GetByCognitoSub(ctx, cognitoSub)
-	if err != nil {
-		return nil, fmt.Errorf("user not found: %v", err)
-	}
-
-	return user, nil
-}
-
 func (s *UserService) UpdateUser(ctx context.Context, id primitive.ObjectID, req *models.UpdateUserRequest) (*models.User, error) {
 	existingUser, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
@@ -93,24 +80,11 @@ func (s *UserService) UpdateUser(ctx context.Context, id primitive.ObjectID, req
 
 	updatedUser, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
-		return existingUser, nil 
+		return existingUser, nil
 	}
 
 	s.log.Infof("User updated successfully: %s", updatedUser.Email)
 	return updatedUser, nil
-}
-
-func (s *UserService) LinkCognitoIdentity(ctx context.Context, id primitive.ObjectID, cognitoSub string) (*models.User, error) {
-	if err := s.userRepo.UpdateCognitoSub(ctx, id, cognitoSub); err != nil {
-		return nil, fmt.Errorf("failed to link Cognito identity: %v", err)
-	}
-
-	user, err := s.userRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get updated user: %v", err)
-	}
-
-	return user, nil
 }
 
 func (s *UserService) DeleteUser(ctx context.Context, id primitive.ObjectID) error {
@@ -143,20 +117,4 @@ func (s *UserService) ListUsers(ctx context.Context, page, limit int) ([]*models
 	}
 
 	return users, total, nil
-}
-
-func (s *UserService) MarkUserAsVerified(ctx context.Context, cognitoSub string) error {
-	user, err := s.userRepo.GetByCognitoSub(ctx, cognitoSub)
-	if err != nil {
-		return fmt.Errorf("user not found: %v", err)
-	}
-
-	updateReq := &models.UpdateUserRequest{}
-	if err := s.userRepo.Update(ctx, user.ID, updateReq); err != nil {
-		s.log.Errorf("Failed to mark user as verified: %v", err)
-		return fmt.Errorf("failed to mark user as verified: %v", err)
-	}
-
-	s.log.Infof("User marked as verified: %s", user.Email)
-	return nil
 }

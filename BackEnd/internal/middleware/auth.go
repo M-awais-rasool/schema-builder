@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"schema-builder-backend/internal/models"
 	"schema-builder-backend/internal/services"
@@ -13,16 +14,16 @@ import (
 )
 
 type AuthMiddleware struct {
-	cognitoService *services.CognitoService
-	userService    *services.UserService
-	log            *logrus.Logger
+	jwtService  *services.JWTService
+	userService *services.UserService
+	log         *logrus.Logger
 }
 
-func NewAuthMiddleware(cognitoService *services.CognitoService, userService *services.UserService) *AuthMiddleware {
+func NewAuthMiddleware(jwtService *services.JWTService, userService *services.UserService) *AuthMiddleware {
 	return &AuthMiddleware{
-		cognitoService: cognitoService,
-		userService:    userService,
-		log:            logger.GetLogger(),
+		jwtService:  jwtService,
+		userService: userService,
+		log:         logger.GetLogger(),
 	}
 }
 
@@ -48,9 +49,9 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		accessToken := tokenParts[1]
+		token := tokenParts[1]
 
-		cognitoUser, err := m.cognitoService.ValidateToken(accessToken)
+		claims, err := m.jwtService.ValidateToken(token)
 		if err != nil {
 			m.log.Errorf("Token validation failed: %v", err)
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
@@ -61,45 +62,30 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		user, err := m.userService.GetUserByCognitoSub(c.Request.Context(), cognitoUser.CognitoSub)
+		userID, err := primitive.ObjectIDFromHex(claims.UserID)
 		if err != nil {
-			userByEmail, emailErr := m.userService.GetUserByEmail(c.Request.Context(), cognitoUser.Email)
-			if emailErr == nil && userByEmail != nil {
-				linkedUser, linkErr := m.userService.LinkCognitoIdentity(c.Request.Context(), userByEmail.ID, cognitoUser.CognitoSub)
-				if linkErr != nil {
-					c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-						Error:   "internal_error",
-						Message: "Failed to link identity",
-					})
-					c.Abort()
-					return
-				}
-				user = linkedUser
-			} else {
-				createReq := &models.CreateUserRequest{
-					CognitoSub: cognitoUser.CognitoSub,
-					Email:      cognitoUser.Email,
-					FirstName:  cognitoUser.FirstName,
-					LastName:   cognitoUser.LastName,
-					Username:   cognitoUser.Username,
-				}
+			m.log.Errorf("Invalid user ID in token: %v", err)
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Error:   "unauthorized",
+				Message: "Invalid token",
+			})
+			c.Abort()
+			return
+		}
 
-				user, err = m.userService.CreateUser(c.Request.Context(), createReq)
-				if err != nil {
-					m.log.Errorf("Failed to create user: %v", err)
-					c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-						Error:   "internal_error",
-						Message: "Failed to create user",
-					})
-					c.Abort()
-					return
-				}
-			}
+		user, err := m.userService.GetUserByID(c.Request.Context(), userID)
+		if err != nil {
+			m.log.Errorf("User not found: %v", err)
+			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
+				Error:   "unauthorized",
+				Message: "User not found",
+			})
+			c.Abort()
+			return
 		}
 
 		c.Set("user", user)
-		c.Set("cognito_user", cognitoUser)
-		c.Set("access_token", accessToken)
+		c.Set("token", token)
 
 		c.Next()
 	})
@@ -119,23 +105,28 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 			return
 		}
 
-		accessToken := tokenParts[1]
+		token := tokenParts[1]
 
-		cognitoUser, err := m.cognitoService.ValidateToken(accessToken)
+		claims, err := m.jwtService.ValidateToken(token)
 		if err != nil {
 			c.Next()
 			return
 		}
 
-		user, err := m.userService.GetUserByCognitoSub(c.Request.Context(), cognitoUser.CognitoSub)
+		userID, err := primitive.ObjectIDFromHex(claims.UserID)
+		if err != nil {
+			c.Next()
+			return
+		}
+
+		user, err := m.userService.GetUserByID(c.Request.Context(), userID)
 		if err != nil {
 			c.Next()
 			return
 		}
 
 		c.Set("user", user)
-		c.Set("cognito_user", cognitoUser)
-		c.Set("access_token", accessToken)
+		c.Set("token", token)
 
 		c.Next()
 	})
@@ -151,22 +142,12 @@ func GetUserFromContext(c *gin.Context) (*models.User, bool) {
 	return userModel, ok
 }
 
-func GetCognitoUserFromContext(c *gin.Context) (*models.User, bool) {
-	user, exists := c.Get("cognito_user")
-	if !exists {
-		return nil, false
-	}
-
-	userModel, ok := user.(*models.User)
-	return userModel, ok
-}
-
-func GetAccessTokenFromContext(c *gin.Context) (string, bool) {
-	token, exists := c.Get("access_token")
+func GetTokenFromContext(c *gin.Context) (string, bool) {
+	token, exists := c.Get("token")
 	if !exists {
 		return "", false
 	}
 
-	accessToken, ok := token.(string)
-	return accessToken, ok
+	tokenStr, ok := token.(string)
+	return tokenStr, ok
 }

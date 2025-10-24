@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -13,9 +14,15 @@ type UserRepository interface {
 	Create(ctx context.Context, user *models.User) error
 	GetByID(ctx context.Context, id primitive.ObjectID) (*models.User, error)
 	GetByEmail(ctx context.Context, email string) (*models.User, error)
-	GetByCognitoSub(ctx context.Context, cognitoSub string) (*models.User, error)
+	GetByUsername(ctx context.Context, username string) (*models.User, error)
+	GetByGoogleID(ctx context.Context, googleID string) (*models.User, error)
 	Update(ctx context.Context, id primitive.ObjectID, update *models.UpdateUserRequest) error
-	UpdateCognitoSub(ctx context.Context, id primitive.ObjectID, cognitoSub string) error
+	UpdateVerificationCode(ctx context.Context, email, code string, expiry time.Time) error
+	UpdateResetCode(ctx context.Context, email, code string, expiry time.Time) error
+	VerifyUser(ctx context.Context, email string) error
+	UpdatePassword(ctx context.Context, email, hashedPassword string) error
+	LinkGoogleAccount(ctx context.Context, email, googleID string) error
+	UpdateGoogleLinkInfo(ctx context.Context, email string, updates map[string]interface{}) error
 	Delete(ctx context.Context, id primitive.ObjectID) error
 	List(ctx context.Context, page, limit int) ([]*models.User, int64, error)
 }

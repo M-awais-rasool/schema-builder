@@ -12,11 +12,12 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
-	AWS      AWSConfig
 	JWT      JWTConfig
+	Firebase FirebaseConfig
 	CORS     CORSConfig
 	Security SecurityConfig
 	AI       AIConfig
+	Email    EmailConfig
 }
 
 type ServerConfig struct {
@@ -29,18 +30,13 @@ type DatabaseConfig struct {
 	Database string
 }
 
-type AWSConfig struct {
-	Region              string
-	AccessKeyID         string
-	SecretAccessKey     string
-	CognitoUserPoolID   string
-	CognitoClientID     string
-	CognitoClientSecret string
-}
-
 type JWTConfig struct {
 	Secret    string
 	ExpiresIn time.Duration
+}
+
+type FirebaseConfig struct {
+	ProjectID string
 }
 
 type CORSConfig struct {
@@ -55,6 +51,14 @@ type SecurityConfig struct {
 
 type AIConfig struct {
 	GeminiAPIKey string
+}
+
+type EmailConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	FromName string
 }
 
 func Load() (*Config, error) {
@@ -82,6 +86,11 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid RATE_LIMIT_WINDOW value: %v", err)
 	}
 
+	emailPort, err := strconv.Atoi(getEnv("EMAIL_PORT", "587"))
+	if err != nil {
+		return nil, fmt.Errorf("invalid EMAIL_PORT value: %v", err)
+	}
+
 	config := &Config{
 		Server: ServerConfig{
 			Port: getEnv("PORT", "8080"),
@@ -91,17 +100,12 @@ func Load() (*Config, error) {
 			URI:      getEnv("MONGODB_URI", "mongodb://localhost:27017"),
 			Database: getEnv("MONGODB_DATABASE", "schema_builder"),
 		},
-		AWS: AWSConfig{
-			Region:              getEnv("AWS_REGION", "us-east-1"),
-			AccessKeyID:         getEnv("AWS_ACCESS_KEY_ID", ""),
-			SecretAccessKey:     getEnv("AWS_SECRET_ACCESS_KEY", ""),
-			CognitoUserPoolID:   getEnv("COGNITO_USER_POOL_ID", ""),
-			CognitoClientID:     getEnv("COGNITO_CLIENT_ID", ""),
-			CognitoClientSecret: getEnv("COGNITO_CLIENT_SECRET", ""),
-		},
 		JWT: JWTConfig{
 			Secret:    getEnv("JWT_SECRET", "default-secret-please-change-in-production"),
 			ExpiresIn: jwtExpiresIn,
+		},
+		Firebase: FirebaseConfig{
+			ProjectID: getEnv("FIREBASE_PROJECT_ID", ""),
 		},
 		CORS: CORSConfig{
 			AllowedOrigins: parseStringSlice(getEnv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")),
@@ -114,6 +118,13 @@ func Load() (*Config, error) {
 		AI: AIConfig{
 			GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
 		},
+		Email: EmailConfig{
+			Host:     getEnv("EMAIL_HOST", "smtp.gmail.com"),
+			Port:     emailPort,
+			User:     getEnv("EMAIL_USER", ""),
+			Password: getEnv("EMAIL_PASS", ""),
+			FromName: getEnv("EMAIL_FROM_NAME", "Schema Builder"),
+		},
 	}
 
 	if err := config.Validate(); err != nil {
@@ -124,14 +135,11 @@ func Load() (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.AWS.CognitoUserPoolID == "" {
-		return fmt.Errorf("COGNITO_USER_POOL_ID is required")
-	}
-	if c.AWS.CognitoClientID == "" {
-		return fmt.Errorf("COGNITO_CLIENT_ID is required")
-	}
 	if c.JWT.Secret == "default-secret-please-change-in-production" && c.Server.Env == "production" {
 		return fmt.Errorf("JWT_SECRET must be set in production")
+	}
+	if c.Firebase.ProjectID == "" && c.Server.Env == "production" {
+		return fmt.Errorf("FIREBASE_PROJECT_ID is required in production")
 	}
 	if c.AI.GeminiAPIKey == "" {
 		return fmt.Errorf("GEMINI_API_KEY is required")

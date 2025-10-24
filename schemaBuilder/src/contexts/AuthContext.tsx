@@ -1,19 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { Amplify } from 'aws-amplify';
-import {
-  signIn,
-  signUp,
-  confirmSignUp,
-  resendSignUpCode,
-  resetPassword,
-  confirmResetPassword,
-  signOut,
-  getCurrentUser,
-  fetchAuthSession,
-  signInWithRedirect,
-} from 'aws-amplify/auth';
-import { awsConfig, validateAwsConfig } from '../config/aws-config';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../config/firebase-config';
+import { authApi, userApi } from '../services/api';
 import type {
   AuthState,
   AuthContextType,
@@ -25,13 +14,8 @@ import type {
   User,
 } from '../types/auth';
 
-Amplify.configure(awsConfig as any);
-
-if (!validateAwsConfig()) {
-  console.error('AWS configuration is incomplete. Authentication may not work properly.');
-}
-
 type AuthAction =
+  | { type: 'AUTH_START' }
   | { type: 'AUTH_SUCCESS'; payload: { user: User | null; isAuthenticated: boolean } }
   | { type: 'AUTH_ERROR'; payload: string }
   | { type: 'AUTH_LOGOUT' }
@@ -46,12 +30,19 @@ const initialState: AuthState = {
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   switch (action.type) {
+    case 'AUTH_START':
+      return {
+        ...state,
+        isLoading: false,
+        error: null,
+      };
     case 'AUTH_SUCCESS':
       return {
         ...state,
         isAuthenticated: action.payload.isAuthenticated,
         user: action.payload.user,
         error: null,
+        isLoading: false,
       };
     case 'AUTH_ERROR':
       return {
@@ -59,6 +50,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isAuthenticated: false,
         user: null,
         error: action.payload,
+        isLoading: false,
       };
     case 'AUTH_LOGOUT':
       return {
@@ -66,6 +58,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         isAuthenticated: false,
         user: null,
         error: null,
+        isLoading: false,
       };
     case 'CLEAR_ERROR':
       return {
@@ -86,90 +79,26 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  const mapCognitoUserToUser = (cognitoUser: any): User => {
-    const attributes = cognitoUser.signInDetails?.loginId
-      ? { email: cognitoUser.signInDetails.loginId }
-      : cognitoUser.attributes || {};
-    const email = attributes.email || cognitoUser.username || '';
-    const firstName = attributes.given_name || attributes.name?.split(' ')[0] || '';
-    const lastName = attributes.family_name || attributes.name?.split(' ').slice(1).join(' ') || '';
-    const username = attributes.preferred_username || cognitoUser.username || email.split('@')[0];
-
-    return {
-      id: cognitoUser.userId || cognitoUser.username,
-      username: username,
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-      avatar: attributes.picture || '',
-      isVerified: true, 
-    };
-  };
-
-  const checkIfUserNeedsVerification = async (username: string): Promise<boolean> => {
-    try {
-      await resendSignUpCode({ username });
-      return true;
-    } catch (error: any) {
-      if (error.name === 'InvalidParameterException' &&
-        error.message?.includes('already confirmed')) {
-        return false;
-      }
-      if (error.name === 'UserNotFoundException') {
-        return false;
-      }
-      return true;
-    }
-  };
-
   const login = async (credentials: LoginCredentials): Promise<void> => {
+    dispatch({ type: 'AUTH_START' });
+    
     try {
-      const { isSignedIn, nextStep } = await signIn({
-        username: credentials.email,
-        password: credentials.password,
-      });
-      if (isSignedIn) {
-        const user = await getCurrentUser();
-        const mappedUser = mapCognitoUserToUser(user);
+      const response = await authApi.login(credentials);
+
+      if (response.data?.token) {
+        localStorage.setItem('authToken', response.data.token);
         dispatch({
           type: 'AUTH_SUCCESS',
-          payload: { user: mappedUser, isAuthenticated: true },
+          payload: { 
+            user: response.data.user, 
+            isAuthenticated: true 
+          },
         });
-      } else if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-        const error = new Error('Please verify your email address before signing in.');
-        error.name = 'UserNotConfirmedException';
-        throw error;
       } else {
-        throw new Error('Authentication failed. Please try again.');
+        throw new Error('Invalid response from server');
       }
     } catch (error: any) {
       console.error('Login error:', error);
-
-      if (error.message?.includes('Incorrect username or password.')) {
-        const needsVerification = await checkIfUserNeedsVerification(credentials.email);
-        if (needsVerification) {
-          const unverifiedError = new Error('Please verify your email address before signing in.');
-          unverifiedError.name = 'UserNotConfirmedException';
-          dispatch({
-            type: 'AUTH_ERROR',
-            payload: unverifiedError.message,
-          });
-          throw unverifiedError;
-        }
-      }
-
-      if (error.name === 'UserNotConfirmedException' ||
-        error.code === 'UserNotConfirmedException' ||
-        error.message?.includes('User is not confirmed')) {
-        const unverifiedError = new Error('Please verify your email address before signing in.');
-        unverifiedError.name = 'UserNotConfirmedException';
-        dispatch({
-          type: 'AUTH_ERROR',
-          payload: unverifiedError.message,
-        });
-        throw unverifiedError;
-      }
-
       dispatch({
         type: 'AUTH_ERROR',
         payload: error.message || 'Login failed. Please check your credentials.',
@@ -179,35 +108,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signUpUser = async (data: SignUpData): Promise<void> => {
+    dispatch({ type: 'AUTH_START' });
+    
     try {
-      const result = await signUp({
-        username: data.username,
-        password: data.password,
-        options: {
-          userAttributes: {
+      await authApi.register(data);
+
+      // User created successfully, now they need to verify their email
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: {
+          user: {
+            username: data.username,
             email: data.email,
-            given_name: data.firstName,
-            family_name: data.lastName,
-            preferred_username: data.username,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            isVerified: false,
           },
+          isAuthenticated: false,
         },
       });
-
-      if (result.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: {
-            user: {
-              username: data.username,
-              email: data.email,
-              firstName: data.firstName,
-              lastName: data.lastName,
-              isVerified: false,
-            },
-            isAuthenticated: false,
-          },
-        });
-      }
     } catch (error: any) {
       console.error('Sign up error:', error);
       dispatch({
@@ -219,18 +138,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const confirmSignUpUser = async (data: ConfirmSignUpData): Promise<void> => {
+    dispatch({ type: 'AUTH_START' });
+    
     try {
-      const result = await confirmSignUp({
-        username: data.username,
-        confirmationCode: data.confirmationCode,
-      });
+      await authApi.verify(data);
 
-      if (result.isSignUpComplete) {
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: { user: null, isAuthenticated: false },
-        });
-      }
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: null, isAuthenticated: false },
+      });
     } catch (error: any) {
       console.error('Confirm sign up error:', error);
       dispatch({
@@ -243,7 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resendConfirmationCode = async (identifier: string): Promise<void> => {
     try {
-      await resendSignUpCode({ username: identifier });
+      await authApi.resendCode(identifier);
     } catch (error: any) {
       console.error('Resend confirmation code error:', error);
       throw new Error(error.message || 'Failed to resend confirmation code.');
@@ -252,7 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const forgotPassword = async (data: ForgotPasswordData): Promise<void> => {
     try {
-      await resetPassword({ username: data.email });
+      await authApi.forgotPassword(data);
     } catch (error: any) {
       console.error('Forgot password error:', error);
       throw new Error(error.message || 'Failed to send password reset code.');
@@ -261,11 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resetPasswordUser = async (data: ResetPasswordData): Promise<void> => {
     try {
-      await confirmResetPassword({
-        username: data.email,
-        confirmationCode: data.confirmationCode,
-        newPassword: data.newPassword,
-      });
+      await authApi.resetPassword(data);
     } catch (error: any) {
       console.error('Reset password error:', error);
       throw new Error(error.message || 'Failed to reset password.');
@@ -274,7 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      await signOut();
+      localStorage.removeItem('authToken');
       dispatch({ type: 'AUTH_LOGOUT' });
     } catch (error: any) {
       console.error('Logout error:', error);
@@ -283,55 +195,95 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signInWithGoogle = async (): Promise<void> => {
+    dispatch({ type: 'AUTH_START' });
+    
     try {
-      await signInWithRedirect({ 
-        provider: 'Google' as const,
-      });
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const idToken = await user.getIdToken();
+
+      let existingUserInfo = null;
+      try {
+        const checkResponse = await authApi.checkUser(user.email!);
+        existingUserInfo = checkResponse.data;
+      } catch (error) {
+        console.log('Could not check existing user, continuing with Google auth');
+      }
+
+      const response = await authApi.googleAuth(idToken);
+
+      if (response.data?.token) {
+        localStorage.setItem('authToken', response.data.token);
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: { 
+            user: response.data.user, 
+            isAuthenticated: true 
+          },
+        });
+
+        if (existingUserInfo?.exists && existingUserInfo.provider === 'email') {
+          console.log('Google account successfully linked to existing email account');
+        } else if (!existingUserInfo?.exists) {
+          console.log('New account created with Google');
+        } else {
+          console.log('Signed in with Google');
+        }
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error: any) {
       console.error('Google sign-in error:', error);
       dispatch({ 
         type: 'AUTH_ERROR', 
         payload: error.message || 'Google sign-in failed. Please try again.' 
       });
+      throw error;
     }
   };
 
   const getCurrentUserData = async (): Promise<void> => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      dispatch({ type: 'AUTH_LOGOUT' });
+      return;
+    }
+
     try {
-      const user = await getCurrentUser();
-      const mappedUser = mapCognitoUserToUser(user);
+      const response = await userApi.getProfile();
       dispatch({
         type: 'AUTH_SUCCESS',
-        payload: { user: mappedUser, isAuthenticated: true },
+        payload: { user: response.data, isAuthenticated: true },
       });
-    } catch {
+    } catch (error) {
+      console.error('Get current user error:', error);
+      localStorage.removeItem('authToken');
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   };
 
   const refreshAuth = async (): Promise<void> => {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      dispatch({ type: 'AUTH_LOGOUT' });
+      return;
+    }
+
     try {
-      const session = await fetchAuthSession();
-      if (session.tokens?.accessToken) {
-        await getCurrentUserData();
-      } else {
-        dispatch({ type: 'AUTH_LOGOUT' });
-      }
+      await getCurrentUserData();
     } catch (error) {
+      console.error('Refresh auth error:', error);
+      localStorage.removeItem('authToken');
       dispatch({ type: 'AUTH_LOGOUT' });
     }
   };
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        const user = await getCurrentUser();
-        const mappedUser = mapCognitoUserToUser(user);
-        dispatch({
-          type: 'AUTH_SUCCESS',
-          payload: { user: mappedUser, isAuthenticated: true },
-        });
-      } catch {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        await getCurrentUserData();
+      } else {
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     };

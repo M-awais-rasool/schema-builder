@@ -63,9 +63,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*models.
 	return &user, nil
 }
 
-func (r *userRepository) GetByCognitoSub(ctx context.Context, cognitoSub string) (*models.User, error) {
+func (r *userRepository) GetByGoogleID(ctx context.Context, googleID string) (*models.User, error) {
 	var user models.User
-	err := r.collection.FindOne(ctx, bson.M{"cognito_sub": cognitoSub}).Decode(&user)
+	err := r.collection.FindOne(ctx, bson.M{"google_id": googleID}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("user not found")
@@ -74,6 +74,132 @@ func (r *userRepository) GetByCognitoSub(ctx context.Context, cognitoSub string)
 	}
 
 	return &user, nil
+}
+
+func (r *userRepository) GetByUsername(ctx context.Context, username string) (*models.User, error) {
+	var user models.User
+	err := r.collection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) UpdateVerificationCode(ctx context.Context, email, code string, expiry time.Time) error {
+	updateDoc := bson.M{
+		"verification_code":   code,
+		"verification_expiry": expiry,
+		"updated_at":          time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update verification code: %v", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdateResetCode(ctx context.Context, email, code string, expiry time.Time) error {
+	updateDoc := bson.M{
+		"reset_code":   code,
+		"reset_expiry": expiry,
+		"updated_at":   time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update reset code: %v", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) VerifyUser(ctx context.Context, email string) error {
+	updateDoc := bson.M{
+		"is_verified":       true,
+		"verification_code": "",
+		"updated_at":        time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to verify user: %v", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, email, hashedPassword string) error {
+	updateDoc := bson.M{
+		"password":   hashedPassword,
+		"reset_code": "",
+		"updated_at": time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %v", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) LinkGoogleAccount(ctx context.Context, email, googleID string) error {
+	updateDoc := bson.M{
+		"google_id":  googleID,
+		"updated_at": time.Now(),
+	}
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updateDoc},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to link google account: %v", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdateGoogleLinkInfo(ctx context.Context, email string, updates map[string]interface{}) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	updates["updated_at"] = time.Now()
+
+	_, err := r.collection.UpdateOne(
+		ctx,
+		bson.M{"email": email},
+		bson.M{"$set": updates},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update google link info: %v", err)
+	}
+
+	return nil
 }
 
 func (r *userRepository) Update(ctx context.Context, id primitive.ObjectID, update *models.UpdateUserRequest) error {
@@ -99,24 +225,6 @@ func (r *userRepository) Update(ctx context.Context, id primitive.ObjectID, upda
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %v", err)
-	}
-
-	return nil
-}
-
-func (r *userRepository) UpdateCognitoSub(ctx context.Context, id primitive.ObjectID, cognitoSub string) error {
-	updateDoc := bson.M{
-		"cognito_sub": cognitoSub,
-		"updated_at":  time.Now(),
-	}
-
-	_, err := r.collection.UpdateOne(
-		ctx,
-		bson.M{"_id": id},
-		bson.M{"$set": updateDoc},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to update cognito_sub: %v", err)
 	}
 
 	return nil
