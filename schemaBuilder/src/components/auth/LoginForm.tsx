@@ -379,9 +379,7 @@ export function LoginForm() {
               type="submit"
               disabled={isLoading || !email || !password || (isSignUpMode && (!firstName || !lastName || !username || !confirmPassword))}
               className="w-full h-11 group relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => {
-                console.log(isSignUpMode ? 'Sign up button clicked' : 'Sign in button clicked');
-              }}
+
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
                 {isLoading ? (

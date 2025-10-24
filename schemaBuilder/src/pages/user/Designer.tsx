@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -18,12 +19,14 @@ import { ChatPanel } from '../../components/chat';
 import { TablePropertiesPanel } from '../../components/sidebars';
 import { SQLPreviewPanel } from '../../components/panels';
 import { MobileButtons } from '../../components/mobile';
-import { SaveSchemaDialog, LoadSchemaDialog } from '../../components/dialogs';
+import { LoadSchemaDialog } from '../../components/dialogs';
+import { OnboardingFlow, type ProjectInfo } from '../../components/onboarding';
+import { useToast } from '../../hooks/useToast';
+import { ToastContainer } from '../../components/ui/Toast';
 
 import { 
   useTableOperations, 
   useChatFunctionality, 
-  useHistoryManagement, 
   useRelationshipOperations,
   useSchemaOperations,
 } from '../../hooks';
@@ -45,14 +48,17 @@ const Designer: React.FC = () => {
   const [isBottomPanelOpen, setIsBottomPanelOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showToolbar] = useState(true);
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+
   const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [currentSchemaId, setCurrentSchemaId] = useState<string | null>(null);
   const [currentSchemaName, setCurrentSchemaName] = useState<string>('');
   const [currentSchemaDescription, setCurrentSchemaDescription] = useState<string>('');
   const [currentSchemaIsPublic, setCurrentSchemaIsPublic] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(true);
+  const [projectInfo, setProjectInfo] = useState<ProjectInfo>({ name: '', description: '', isPublic: false });
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [, setReactFlowInstance] = useState<any>(null);
+  const { toasts, removeToast, success, error } = useToast();
 
   const { chatMessages, currentMessage, setCurrentMessage, sendMessage, isLoading } = useChatFunctionality();
   
@@ -61,17 +67,9 @@ const Designer: React.FC = () => {
     updateSchema, 
     deleteSchema,
     getSchema,
-    convertTablesToNodes,
-    loading: schemaLoading 
+    convertTablesToNodes
   } = useSchemaOperations();
   
-  const { undo, redo, canUndo, canRedo } = useHistoryManagement({
-    nodes,
-    edges,
-    setNodes,
-    setEdges,
-  });
-
   const {
     addNewTable,
     updateTableName,
@@ -98,28 +96,33 @@ const Designer: React.FC = () => {
     const loadInitialData = async () => {
       const schemaId = searchParams.get('schema');
       if (schemaId) {
+        setShowOnboarding(false);
         try {
           const schema = await getSchema(schemaId);
           const { nodes: loadedNodes, edges: loadedEdges } = convertTablesToNodes(schema.tables);
           setNodes(loadedNodes);
           setEdges(loadedEdges);
-          console.log("Loaded schema:", schema);  
           setCurrentSchemaId(schema.id);
           setCurrentSchemaName(schema.name);
           setCurrentSchemaDescription(schema.description || '');
           setCurrentSchemaIsPublic(schema.is_public || false);
+          setProjectInfo({ name: schema.name, description: schema.description || '', isPublic: schema.is_public || false });
         } catch (error) {
           setNodes(initialNodes);
           setEdges(initialEdges);
         } 
       } else {
-        setNodes(initialNodes);
-        setEdges(initialEdges);
+        const skipOnboarding = searchParams.get('skip') === 'true';
+        if (skipOnboarding) {
+          setShowOnboarding(false);
+          setNodes(initialNodes);
+          setEdges(initialEdges);
+        }
       }
     };
 
     loadInitialData();
-  }, [searchParams, setNodes, setEdges]);
+  }, [searchParams, setNodes, setEdges, getSchema, convertTablesToNodes]);
 
   useEffect(() => {
     if (selectedNode) {
@@ -134,7 +137,6 @@ const Designer: React.FC = () => {
     const lastMessage = chatMessages[chatMessages.length - 1];
     if (lastMessage?.sender === 'ai' && lastMessage.schemaAction) {
       const action = lastMessage.schemaAction;
-      console.log("Processing AI schema action:", action);
       if ((action.type === 'create_tables' || action.type === 'create_schema') && action.tables) {
         const startX = 100;
         const startY = 100;
@@ -143,7 +145,6 @@ const Designer: React.FC = () => {
         const tablesPerRow = 3;
         
         const newNodes = action.tables.map((table: any, index: number) => {
-          console.log(`Processing table ${index}:`, table);
           const row = Math.floor(index / tablesPerRow);
           const col = index % tablesPerRow;
           
@@ -247,25 +248,32 @@ const Designer: React.FC = () => {
     setIsRightSidebarOpen(false);
   };
 
-  const handleSaveSchema = async (name: string, description: string, isPublic: boolean) => {
+  const handleSaveSchema = async (name?: string, description?: string, isPublic?: boolean) => {
     try {
+      const schemaName = name || currentSchemaName || 'Untitled Schema';
+      const schemaDescription = description || currentSchemaDescription || '';
+      const schemaIsPublic = isPublic !== undefined ? isPublic : currentSchemaIsPublic;
       if (currentSchemaId) {
-        console.log("Updating schema:", currentSchemaId);
-        console.log({ name, description, isPublic, nodes });
         await updateSchema(currentSchemaId, {
-          name,
-          description,
+          name: schemaName,
+          description: schemaDescription,
           nodes,
-          isPublic,
+          isPublic: schemaIsPublic,
         });
+        success('Schema Updated!', `${schemaName} has been successfully updated.`);
       } else {
-        const newSchema = await createSchema(name, description, nodes, isPublic);
+        const newSchema = await createSchema(schemaName, schemaDescription, nodes, schemaIsPublic);
         setCurrentSchemaId(newSchema.id);
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('schema', newSchema.id);
+        window.history.replaceState({}, '', newUrl.toString());
+        success('Schema Saved!', `${schemaName} has been successfully created.`);
       }
-      setCurrentSchemaName(name);
-      alert('Schema saved successfully!');
-    } catch (error) {
-      console.error('Failed to save schema:', error);
+      setCurrentSchemaName(schemaName);
+      setCurrentSchemaDescription(schemaDescription);
+      setCurrentSchemaIsPublic(schemaIsPublic);
+    } catch (err: any) {
+      error('Save Failed', err.message || 'Failed to save schema. Please try again.');
     }
   };
 
@@ -297,17 +305,62 @@ const Designer: React.FC = () => {
     }
   };
 
+  const handleOnboardingComplete = (info: ProjectInfo, databaseType: 'mysql' | 'graphql', schemaId?: string) => {
+    setProjectInfo(info);
+    setCurrentSchemaName(info.name);
+    setCurrentSchemaDescription(info.description);
+    setCurrentSchemaIsPublic(info.isPublic);
+    
+    if (schemaId) {
+      setCurrentSchemaId(schemaId);
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('schema', schemaId);
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+    
+    if (databaseType === 'mysql') {
+      setShowOnboarding(false);
+      setNodes(initialNodes);
+      setEdges(initialEdges);
+    } else {
+      alert('GraphQL support is coming soon! Please choose MySQL for now.');
+    }
+  };
+
+  if (showOnboarding) {
+    return (
+      <div className="relative">
+        <OnboardingFlow
+          onComplete={handleOnboardingComplete}
+          initialProjectInfo={projectInfo}
+        />
+        <button
+          onClick={() => {
+            setShowOnboarding(false);
+            setNodes(initialNodes);
+            setEdges(initialEdges);
+          }}
+          className="absolute top-4 right-4 px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg transition-colors duration-200"
+          style={{ zIndex: 9999 }}
+        >
+          Skip Onboarding (Dev)
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <motion.div 
+      className="h-screen bg-white flex flex-col overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <DesignerToolbar
         onNavigateHome={() => navigate('/dashboard')}
-        onSave={() => setIsSaveDialogOpen(true)}
-        onUndo={undo}
-        onRedo={redo}
+        onSave={() => handleSaveSchema()}
         onAddTable={addNewTable}
         onToggleSQL={() => setIsBottomPanelOpen(!isBottomPanelOpen)}
-        canUndo={canUndo}
-        canRedo={canRedo}
         showToolbar={showToolbar}
         schemaName={currentSchemaName}
         isEditing={!!currentSchemaId}
@@ -385,16 +438,7 @@ const Designer: React.FC = () => {
           isLeftSidebarOpen={isLeftSidebarOpen}
         />
 
-      <SaveSchemaDialog
-        isOpen={isSaveDialogOpen}
-        onClose={() => setIsSaveDialogOpen(false)}
-        onSave={handleSaveSchema}
-        initialName={currentSchemaName}
-        initialDescription={currentSchemaDescription}
-        initialIsPublic={currentSchemaIsPublic}
-        loading={schemaLoading}
-        isUpdate={!!currentSchemaId}
-      />
+
 
       <LoadSchemaDialog
         isOpen={isLoadDialogOpen}
@@ -402,7 +446,9 @@ const Designer: React.FC = () => {
         onLoad={handleLoadSchema}
         onDelete={handleDeleteSchema}
       />
-    </div>
+      
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+    </motion.div>
   );
 };
 

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   Save,
-  Undo,
-  Redo,
   Plus,
   Code,
   Home,
@@ -63,17 +61,11 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   );
 };
 
-
-
 interface DesignerToolbarProps {
   onNavigateHome: () => void;
   onSave: () => void;
-  onUndo: () => void;
-  onRedo: () => void;
   onAddTable: () => void;
   onToggleSQL: () => void;
-  canUndo: boolean;
-  canRedo: boolean;
   showToolbar: boolean;
   schemaName?: string;
   isEditing?: boolean;
@@ -82,12 +74,8 @@ interface DesignerToolbarProps {
 export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
   onNavigateHome,
   onSave,
-  onUndo,
-  onRedo,
   onAddTable,
   onToggleSQL,
-  canUndo,
-  canRedo,
   showToolbar,
   schemaName,
   isEditing = false,
@@ -121,16 +109,6 @@ export const DesignerToolbar: React.FC<DesignerToolbarProps> = ({
             label={isEditing ? "Update" : "Save"}
             variant="primary"
             showLabel={false}
-          />
-          <ToolbarButton
-            onClick={onUndo}
-            disabled={!canUndo}
-            icon={<Undo className="w-4 h-4" />}
-          />
-          <ToolbarButton
-            onClick={onRedo}
-            disabled={!canRedo}
-            icon={<Redo className="w-4 h-4" />}
           />
         </div>
       </div>

@@ -202,14 +202,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const user = result.user;
       const idToken = await user.getIdToken();
 
-      let existingUserInfo = null;
-      try {
-        const checkResponse = await authApi.checkUser(user.email!);
-        existingUserInfo = checkResponse.data;
-      } catch (error) {
-        console.log('Could not check existing user, continuing with Google auth');
-      }
-
       const response = await authApi.googleAuth(idToken);
 
       if (response.data?.token) {
@@ -222,13 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
         });
 
-        if (existingUserInfo?.exists && existingUserInfo.provider === 'email') {
-          console.log('Google account successfully linked to existing email account');
-        } else if (!existingUserInfo?.exists) {
-          console.log('New account created with Google');
-        } else {
-          console.log('Signed in with Google');
-        }
+        // Google authentication successful
       } else {
         throw new Error('Invalid response from server');
       }
