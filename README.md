@@ -197,7 +197,6 @@ BackEnd/
 ```bash
 npm run dev          # Start development server
 npm run build        # Build for production
-npm run preview      # Preview production build
 npm run lint         # Run ESLint
 ```
 
@@ -205,11 +204,8 @@ npm run lint         # Run ESLint
 ```bash
 make dev             # Start development server with hot reload
 make build           # Build the application
-make test            # Run tests
-make test-coverage   # Run tests with coverage
 make lint            # Run linter
 make format          # Format code
-make docker-build    # Build Docker image
 ```
 
 ### Code Quality
@@ -218,22 +214,6 @@ make docker-build    # Build Docker image
 - **golangci-lint** for Go code linting
 - **Pre-commit hooks** for code quality enforcement
 - **Test coverage** reports for both frontend and backend
-
-## 🧪 Testing
-
-### Frontend Testing
-```bash
-npm run test         # Run unit tests
-npm run test:coverage # Run tests with coverage
-```
-
-### Backend Testing
-```bash
-make test            # Run all tests
-make test-race       # Run tests with race detection
-make benchmark       # Run benchmarks
-make test-coverage   # Generate coverage report
-```
 
 ## 🚢 Deployment
 
@@ -248,15 +228,6 @@ make test-coverage   # Generate coverage report
    ```bash
    make build-linux
    ```
-
-### Docker Deployment
-```bash
-# Build images
-docker-compose -f docker-compose.yml -f docker-compose.production.yml build
-
-# Deploy to production
-docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
-```
 
 ### Environment Variables for Production
 - Set secure JWT secrets
@@ -300,17 +271,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Firebase** for robust authentication services
 - **MongoDB** for flexible document storage
 - **Gin Framework** for fast HTTP routing in Go
-
-## 📞 Support
-
-For support, email support@schemabuilder.com or create an issue in this repository.
-
-## 🔗 Links
-
-- **Live Demo**: [https://schemabuilder.app](https://schemabuilder.app)
-- **API Documentation**: [https://api.schemabuilder.app/docs](https://api.schemabuilder.app/docs)
-- **Issue Tracker**: [GitHub Issues](https://github.com/M-awais-rasool/schema-builder/issues)
-
----
 
 **Built with ❤️ by [M. Awais Rasool](https://github.com/M-awais-rasool)**
