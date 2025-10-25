@@ -1,4 +1,4 @@
-import api from '../lib/axios';
+import api from '../config/axios';
 import type {
   LoginCredentials,
   SignUpData,
@@ -69,8 +69,14 @@ export const userApi = {
     return response.data;
   },
 
-  updateProfile: async (data: Partial<User>) => {
-    const response = await api.put('/user/profile', data);
+  updateProfile: async (data: { first_name?: string; last_name?: string; username?: string; avatar?: string }) => {
+    const requestData = {
+      first_name: data.first_name,
+      last_name: data.last_name,
+      username: data.username,
+      avatar: data.avatar,
+    };
+    const response = await api.put('/user/profile', requestData);
     return response.data;
   },
 };

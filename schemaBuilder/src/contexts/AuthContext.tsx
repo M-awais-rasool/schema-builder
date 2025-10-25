@@ -11,6 +11,7 @@ import type {
   ConfirmSignUpData,
   ForgotPasswordData,
   ResetPasswordData,
+  UpdateProfileData,
   User,
 } from '../types/auth';
 
@@ -113,15 +114,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await authApi.register(data);
 
-      // User created successfully, now they need to verify their email
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: {
           user: {
             username: data.username,
             email: data.email,
-            firstName: data.firstName,
-            lastName: data.lastName,
+            first_name: data.firstName,
+            last_name: data.lastName,
             isVerified: false,
           },
           isAuthenticated: false,
@@ -214,7 +214,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
         });
 
-        // Google authentication successful
       } else {
         throw new Error('Invalid response from server');
       }
@@ -264,6 +263,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateProfile = async (data: UpdateProfileData): Promise<void> => {
+    try {
+      const response = await userApi.updateProfile(data);
+      dispatch({
+        type: 'AUTH_SUCCESS',
+        payload: { user: response.data, isAuthenticated: true },
+      });
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      throw new Error(error.message || 'Failed to update profile.');
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('authToken');
@@ -289,6 +301,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getCurrentUser: getCurrentUserData,
     refreshAuth,
     signInWithGoogle,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

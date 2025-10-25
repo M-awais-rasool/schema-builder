@@ -5,6 +5,7 @@ import { DatabaseSelectionStep } from './DatabaseSelectionStep';
 import { useToast } from '../../hooks/useToast';
 import { ToastContainer } from '../ui/Toast';
 import { schemaApi } from '../../services/api';
+import { Waves } from '../animations/waves-background';
 
 export interface ProjectInfo {
   name: string;
@@ -17,9 +18,9 @@ interface OnboardingFlowProps {
   initialProjectInfo?: ProjectInfo;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
-  onComplete, 
-  initialProjectInfo 
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
+  onComplete,
+  initialProjectInfo
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [projectInfo, setProjectInfo] = useState<ProjectInfo>(
@@ -39,26 +40,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       error('Coming Soon', 'GraphQL support is currently under development. Please select MySQL for now.');
       return;
     }
-    
+
     try {
       setIsCreating(true);
       info('Creating Schema', 'Setting up your new database schema...');
-      
+
       const schemaData = {
         name: projectInfo.name,
         description: projectInfo.description,
         database_type: databaseType,
         is_public: projectInfo.isPublic,
-        tables: [], 
+        tables: [],
         relationships: []
       };
-      
+
       const createdSchema = await schemaApi.create(schemaData);
       success('Schema Created!', `${projectInfo.name} has been successfully created and is ready to use.`);
       setTimeout(() => {
         onComplete(projectInfo, databaseType, createdSchema.data.id);
       }, 1500);
-      
+
     } catch (err: any) {
       error('Creation Failed', err.response?.data?.message || 'Failed to create schema. Please try again.');
       setIsCreating(false);
@@ -74,7 +75,28 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 z-50">
-        <div className="w-full max-w-md">
+        <div className="absolute inset-0 z-0">
+          <Waves
+            lineColor={"rgba(0, 0, 0, 0.08)"}
+            backgroundColor="transparent"
+            waveSpeedX={0.015}
+            waveSpeedY={0.008}
+            waveAmpX={30}
+            waveAmpY={15}
+            friction={0.92}
+            tension={0.008}
+            maxCursorMove={100}
+            xGap={14}
+            yGap={40}
+          />
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-background/80 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background/80 to-transparent"></div>
+            <div className="absolute top-0 bottom-0 left-0 w-32 bg-gradient-to-r from-background/80 to-transparent"></div>
+            <div className="absolute top-0 bottom-0 right-0 w-32 bg-gradient-to-l from-background/80 to-transparent"></div>
+          </div>
+        </div>
+        <div className="w-full max-w-md relative z-10">
           <AnimatePresence mode="wait">
             {currentStep === 1 && (
               <motion.div
@@ -90,7 +112,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 />
               </motion.div>
             )}
-            
+
             {currentStep === 2 && (
               <motion.div
                 key="database-selection"
@@ -109,7 +131,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </AnimatePresence>
         </div>
       </div>
-      
+
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </>
   );

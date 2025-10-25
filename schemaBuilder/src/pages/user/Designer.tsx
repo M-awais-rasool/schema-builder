@@ -329,7 +329,7 @@ const Designer: React.FC = () => {
 
   if (showOnboarding) {
     return (
-      <div className="relative">
+      <div className="min-h-screen bg-black relative">
         <OnboardingFlow
           onComplete={handleOnboardingComplete}
           initialProjectInfo={projectInfo}

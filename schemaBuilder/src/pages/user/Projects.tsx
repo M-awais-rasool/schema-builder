@@ -84,169 +84,186 @@ const Projects: React.FC = () => {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">My Schemas</h1>
-            <p className="text-gray-600">Manage and organize your database schemas.</p>
-          </div>
-          <button
-            onClick={() => navigate('/designer')}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 flex items-center"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Schema
-          </button>
-        </div>
-
-        <div className="flex space-x-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search schemas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'public' | 'private')}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-          >
-            <option value="all">All Schemas</option>
-            <option value="public">Public</option>
-            <option value="private">Private</option>
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-red-600">{error}</p>
-        </div>
-      ) : filteredSchemas.length === 0 ? (
-        <div className="text-center py-12">
-          <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No schemas found</h3>
-          <p className="text-gray-600 mb-6">
-            {schemas.length === 0
-              ? "You haven't created any schemas yet. Start building your first database schema!"
-              : "No schemas match your current search and filter criteria."
-            }
-          </p>
-          {schemas.length === 0 && (
+    <div className="min-h-screen bg-white">
+      <div className="p-8 animate-fade-in">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div className="animate-slide-up">
+              <h1 className="text-4xl font-bold text-black mb-2 tracking-tight">My Schemas</h1>
+              <p className="text-gray-600">Manage and organize your database schemas.</p>
+            </div>
             <button
               onClick={() => navigate('/designer')}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+              className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-300 flex items-center transform hover:scale-105 hover:shadow-lg animate-slide-up"
             >
-              Create Your First Schema
+              <Plus className="w-5 h-5 mr-2" />
+              New Schema
             </button>
-          )}
+          </div>
+
+          <div className="flex space-x-4 mb-6 animate-slide-up">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 transition-colors duration-200" />
+              <input
+                type="text"
+                placeholder="Search schemas..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-300 bg-white text-black placeholder-gray-500 hover:border-gray-300"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'public' | 'private')}
+              className="px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-300 bg-white text-black hover:border-gray-300"
+            >
+              <option value="all">All Schemas</option>
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
+          </div>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredSchemas.map((schema) => (
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {Array.from({ length: 8 }).map((_, index) => (
               <div
-                key={schema.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 group"
+                key={index}
+                className="bg-gray-100 rounded-2xl p-6 animate-pulse"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center flex-1 min-w-0">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
-                      <FolderOpen className="w-6 h-6 text-indigo-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-gray-900 truncate">{schema.name}</h3>
-                      <p className="text-sm text-gray-600">{schema.tables.length} table{schema.tables.length !== 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-1 ml-2">
-                    {schema.is_public ? (
-                      <div title="Public schema">
-                        <Unlock className="w-4 h-4 text-blue-500" />
-                      </div>
-                    ) : (
-                      <div title="Private schema">
-                        <Lock className="w-4 h-4 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-xl" />
+                  <div className="w-8 h-4 bg-gray-200 rounded" />
                 </div>
-
-                {schema.description && (
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{schema.description}</p>
-                )}
-
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                  <div className="flex items-center space-x-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{formatDate(schema.updated_at)}</span>
-                  </div>
-                  <span>v{schema.version}</span>
+                <div className="mb-4">
+                  <div className="h-6 bg-gray-200 rounded mb-2" />
+                  <div className="h-4 bg-gray-200 rounded w-3/4" />
                 </div>
-
-                <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button
-                    onClick={() => handleEditSchema(schema.id)}
-                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors duration-200"
-                  >
-                    <Edit className="w-4 h-4" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleViewSchema(schema.id)}
-                    className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors duration-200"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View</span>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSchema(schema.id, schema.name)}
-                    className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors duration-200"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
               </div>
             ))}
           </div>
+        )}
+        {error ? (
+          <div className="text-center py-12 animate-fade-in">
+            <p className="text-red-600 bg-red-50 p-4 rounded-lg inline-block">{error}</p>
+          </div>
+        ) : filteredSchemas.length === 0 ? (
+          <div className="text-center py-12 animate-fade-in">
+            <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4 animate-bounce" />
+            <h3 className="text-xl font-semibold text-black mb-2">No schemas found</h3>
+            <p className="text-gray-600 mb-6">
+              {schemas.length === 0
+                ? "You haven't created any schemas yet. Start building your first database schema!"
+                : "No schemas match your current search and filter criteria."
+              }
+            </p>
+            {schemas.length === 0 && (
+              <button
+                onClick={() => navigate('/designer')}
+                className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+              >
+                Create Your First Schema
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {filteredSchemas.map((schema, index) => (
+                <div
+                  key={schema.id}
+                  className="bg-white rounded-xl shadow-lg border-2 border-gray-100 p-6 hover:shadow-xl hover:border-black transition-all duration-300 group transform hover:-translate-y-1 animate-slide-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mr-3 flex-shrink-0 group-hover:bg-gray-800 transition-colors duration-300">
+                        <FolderOpen className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-black truncate group-hover:text-gray-800 transition-colors duration-200">{schema.name}</h3>
+                        <p className="text-sm text-gray-600">{schema.tables.length} table{schema.tables.length !== 1 ? 's' : ''}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1 ml-2">
+                      {schema.is_public ? (
+                        <div title="Public schema" className="animate-pulse">
+                          <Unlock className="w-4 h-4 text-green-500" />
+                        </div>
+                      ) : (
+                        <div title="Private schema">
+                          <Lock className="w-4 h-4 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} schemas
-              </p>
-              <div className="flex space-x-2">
-                <button
-                  onClick={prevPage}
-                  disabled={pagination.page <= 1}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={nextPage}
-                  disabled={pagination.page >= pagination.totalPages}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Next
-                </button>
-              </div>
+                  {schema.description && (
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 group-hover:text-gray-700 transition-colors duration-200">{schema.description}</p>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <div className="flex items-center space-x-1 group-hover:text-gray-600 transition-colors duration-200">
+                      <Clock className="w-3 h-3" />
+                      <span>{formatDate(schema.updated_at)}</span>
+                    </div>
+                    <span className="bg-gray-100 px-2 py-1 rounded-full text-black font-medium">v{schema.version}</span>
+                  </div>
+
+                  <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                    <button
+                      onClick={() => handleEditSchema(schema.id)}
+                      className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-all duration-200 transform hover:scale-105"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleViewSchema(schema.id)}
+                      className="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-gray-100 text-black rounded-lg hover:bg-gray-200 transition-all duration-200 transform hover:scale-105"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSchema(schema.id, schema.name)}
+                      className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-all duration-200 transform hover:scale-105"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </>
-      )}
+
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between animate-fade-in">
+                <p className="text-sm text-gray-600">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                  {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+                  {pagination.total} schemas
+                </p>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={prevPage}
+                    disabled={pagination.page <= 1}
+                    className="px-4 py-2 border-2 border-black rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 hover:bg-black hover:text-white transition-all duration-300 transform hover:scale-105 text-black"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={nextPage}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="px-4 py-2 border-2 border-black rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:border-gray-300 hover:bg-black hover:text-white transition-all duration-300 transform hover:scale-105 text-black"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

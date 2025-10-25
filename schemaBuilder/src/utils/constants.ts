@@ -1,3 +1,5 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge";
 export const defaultBlue = "#175e7a";
 export const defaultNoteTheme = "#fcf7ac";
 export const noteWidth = 180;
@@ -39,6 +41,9 @@ export const Cardinality = {
 };
 
 const xOffset = window.innerWidth * 0.65;
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 export const diagram = {
   tables: [
     {

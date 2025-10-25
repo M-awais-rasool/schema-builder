@@ -101,7 +101,6 @@ export const ProjectInfoStep: React.FC<ProjectInfoStepProps> = ({
       animate="visible"
       className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 md:p-8 max-w-md mx-auto"
     >
-      {/* Header Section */}
       <div className="text-center mb-8">
         <motion.div
           variants={itemVariants}

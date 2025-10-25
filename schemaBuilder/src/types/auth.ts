@@ -2,8 +2,8 @@ export interface User {
   id?: string;
   username: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
   avatar?: string;
   isVerified: boolean;
   createdAt?: string;
@@ -45,6 +45,13 @@ export interface ResetPasswordData {
   newPassword: string;
 }
 
+export interface UpdateProfileData {
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  avatar?: string;
+}
+
 export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signUp: (data: SignUpData) => Promise<void>;
@@ -56,5 +63,6 @@ export interface AuthContextType extends AuthState {
   getCurrentUser: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  updateProfile: (data: UpdateProfileData) => Promise<void>;
 }
 

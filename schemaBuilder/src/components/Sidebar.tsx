@@ -3,22 +3,22 @@ import {
   FolderOpen,
   Database,
   User,
-  Settings,
   LogOut,
   Sparkles
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const navigationItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/projects', icon: FolderOpen, label: 'Projects' },
     { path: '/export', icon: Database, label: 'Schemas' },
     { path: '/profile', icon: User, label: 'Profile' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -27,7 +27,14 @@ const Sidebar = () => {
     navigate(path);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      navigate('/login');
+    }
   };
 
   return (

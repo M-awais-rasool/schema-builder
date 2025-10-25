@@ -10,7 +10,6 @@ import Projects from './pages/user/Projects';
 import Export from './pages/user/Export';
 import SchemaViewer from './pages/user/SchemaViewer';
 import Profile from './pages/user/Profile';
-import Settings from './pages/user/Settings';
 import './App.css';
 import LandingPage from './pages/auth/LandingPage';
 
@@ -60,7 +59,6 @@ function AppRoutes() {
             <Route path="projects" element={<Projects />} />
             <Route path="export" element={<Export />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
