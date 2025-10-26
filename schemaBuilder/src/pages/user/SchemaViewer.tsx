@@ -30,7 +30,6 @@ const SchemaViewer: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [exportFormat, setExportFormat] = useState<'postgresql' | 'mysql' | 'sqlite'>('postgresql');
 
-  // Mock schema data - replace with actual API call
   const mockSchema: SchemaDetail = {
     id: schemaId || '1',
     name: 'E-commerce Database',
@@ -318,9 +317,7 @@ CREATE INDEX idx_shopping_cart_user ON shopping_cart(user_id);`
           </div>
         </div>
 
-        {/* Schema Details Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fade-in-up">
-          {/* Header Section */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-8 border-b border-gray-100">
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-4">
@@ -336,7 +333,6 @@ CREATE INDEX idx_shopping_cart_user ON shopping_cart(user_id);`
               </div>
             </div>
 
-            {/* Schema Stats */}
             <div className="mt-6 flex items-center space-x-8">
               <div className="flex items-center text-gray-600">
                 <Table className="w-5 h-5 mr-2" />
@@ -349,7 +345,6 @@ CREATE INDEX idx_shopping_cart_user ON shopping_cart(user_id);`
             </div>
           </div>
 
-          {/* Code Viewer Section */}
           <div className="p-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
@@ -381,7 +376,6 @@ CREATE INDEX idx_shopping_cart_user ON shopping_cart(user_id);`
               </button>
             </div>
 
-            {/* Code Container with animated border */}
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-xl animate-pulse-glow"></div>
               <div className="relative bg-gray-900 rounded-xl p-6 overflow-hidden">
@@ -403,7 +397,6 @@ CREATE INDEX idx_shopping_cart_user ON shopping_cart(user_id);`
               </div>
             </div>
 
-            {/* Export Options */}
             <div className="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Settings className="w-5 h-5 mr-2 text-indigo-600" />

@@ -72,7 +72,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         </div>
       </div>
       
-      {/* Messages Container */}
       <div className={`
         flex-1 overflow-y-auto p-4 space-y-4 
         bg-white
@@ -111,7 +110,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         <div ref={chatMessagesEndRef} />
       </div>
       
-      {/* Chat Input */}
       <div className={`
         relative border-t border-gray-200 bg-white
         ${isOpen ? 'opacity-100' : 'opacity-0'}
@@ -125,7 +123,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         />
       </div>
       
-      {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-1 bg-black"></div>
     </div>
   );

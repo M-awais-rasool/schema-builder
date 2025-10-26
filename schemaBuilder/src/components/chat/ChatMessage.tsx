@@ -10,7 +10,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   return (
     <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-4 duration-300`}>
       <div className={`flex items-start space-x-3 max-w-sm ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-        {/* Avatar */}
         <div className={`
           relative p-2.5 rounded-full shrink-0
           ${message.sender === 'user' 
@@ -31,7 +30,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           )}
         </div>
         
-        {/* Message Bubble */}
         <div className={`
           relative p-4 rounded-2xl shadow-sm
           ${message.sender === 'user' 
@@ -40,10 +38,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           }
           transform transition-all duration-200 hover:shadow-md
         `}>
-          {/* Message content */}
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
           
-          {/* Timestamp */}
           <div className={`
             flex items-center justify-between mt-2 pt-2
             ${message.sender === 'user' ? 'border-t border-white/20' : 'border-t border-gray-200'}
@@ -62,7 +58,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             )}
           </div>
           
-          {/* Message tail */}
           <div className={`
             absolute top-3 w-3 h-3 transform rotate-45
             ${message.sender === 'user' 

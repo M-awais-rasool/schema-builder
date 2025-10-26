@@ -19,8 +19,6 @@ function Table({ table, grab }: { table: any; grab: any; }) {
       height={height}
       className="drop-shadow-xl rounded-lg cursor-move transition-all duration-200 hover:drop-shadow-2xl"
       onPointerDown={(e: any) => {
-        // Required for onPointerLeave to trigger when a touch pointer leaves
-        // https://stackoverflow.com/a/70976017/1137077
         e.target.releasePointerCapture(e.pointerId);
 
         if (!e.isPrimary) return;
@@ -49,8 +47,6 @@ function Table({ table, grab }: { table: any; grab: any; }) {
             onPointerEnter={(e) => e.isPrimary && setHoveredField(i)}
             onPointerLeave={(e) => e.isPrimary && setHoveredField(-1)}
             onPointerDown={(e: any) => {
-              // Required for onPointerLeave to trigger when a touch pointer leaves
-              // https://stackoverflow.com/a/70976017/1137077
               e.target.releasePointerCapture(e.pointerId);
             }}
           >
